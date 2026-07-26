@@ -47,6 +47,9 @@ header.top{position:relative;z-index:6;flex:none;background:var(--head);padding:
 .ctx #inmark-go{background:var(--olive);color:#FAF9F6;border-color:var(--olive);font-size:11.5px;padding:6px 9px}
 [data-theme="dark"] .ctx #inmark-go{background:var(--h);color:#2B2926;border-color:var(--h)}
 .ctx .tg.act{background:var(--olive);color:#FAF9F6}
+.inkpkg{display:flex;flex-direction:column;align-items:center;line-height:1;text-decoration:none;font-size:15px;background:var(--olive);color:#FAF9F6;border:0}
+[data-theme="dark"] .inkpkg{background:var(--h);color:#2B2926}
+.inkpkg small{font-size:7px;margin-top:1px;font-weight:400}
 .wbmark{position:absolute;bottom:8px;left:0;right:0;text-align:center;font:italic 13px 'Cormorant Garamond',serif;color:var(--h);opacity:.5;pointer-events:none;z-index:9999}
 .obj.sel{outline:2px dashed var(--h);outline-offset:4px}
 .obj .x{position:absolute;top:-12px;right:-12px;width:24px;height:24px;border-radius:50%;background:var(--rose);color:var(--h);border:1px solid var(--h);font-size:13px;display:none;align-items:center;justify-content:center;cursor:pointer;z-index:5}
@@ -125,6 +128,7 @@ footer.bottom{position:relative;z-index:5;flex:none;background:var(--paper);bord
     <div><div class="logo"><span class="w">Ward</span><span class="b">Board</span></div><div class="by">by @sea.laptev_</div></div>
     <div class="head-btns">
       <button class="hbtn" id="wish" title="Wishlist">🛍</button>
+      <a class="hbtn inkpkg" href="https://www.inmark.store" target="_blank" rel="noopener" title="магазин inmark">🛍<small>inmark</small></a>
       <button class="hbtn" id="th">🌙</button>
     </div>
   </header>
@@ -142,11 +146,11 @@ footer.bottom{position:relative;z-index:5;flex:none;background:var(--paper);bord
       <button data-tool="text">🅰<small>текст</small></button>
       <button data-tool="sticker">✨<small>стикер</small></button>
       <div class="sep"></div>
-      <button data-tool="me">🙋<small>я</small></button>
       <button data-tool="undo">↶<small>назад</small></button>
       <button data-tool="redo">↷<small>вперёд</small></button>
       <div class="sep"></div>
       <button id="dl">⬇<small>скачать</small></button>
+      <button id="save-cap">💾<small>в капсулу</small></button>
     </div>
 
     <div class="stage">
@@ -161,7 +165,6 @@ footer.bottom{position:relative;z-index:5;flex:none;background:var(--paper);bord
             <button class="tg" data-f="italic"><i>К</i></button>
             <button class="tg" data-f="underline"><span style="text-decoration:underline">Ч</span></button>
           </div>
-          <button id="inmark-go" title="смотреть в inmark">🛍 inmark</button>
         </div>
       </div>
     </div>
@@ -495,9 +498,7 @@ document.querySelectorAll('#fmt .tg').forEach(b=>b.addEventListener('click',()=>
   if(f==='underline')sel.style.textDecoration=sel.classList.contains('t-underline')?'underline':'none';
 }));
 
-/* → inmark: переброс в интернет-магазин */
-const INMARK_URL='https://www.inmark.store';
-document.getElementById('inmark-go').addEventListener('click',()=>{window.open(INMARK_URL,'_blank');});
+/* → inmark: теперь ссылка-«пакетик» <a> в шапке, JS не нужен */
 
 /* tools */
 document.querySelectorAll('.tools button').forEach(b=>b.addEventListener('click',()=>{
