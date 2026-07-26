@@ -127,8 +127,7 @@ footer.bottom{position:relative;z-index:5;flex:none;background:var(--paper);bord
   <header class="top">
     <div><div class="logo"><span class="w">Ward</span><span class="b">Board</span></div><div class="by">by @sea.laptev_</div></div>
     <div class="head-btns">
-      <button class="hbtn" id="wish" title="Wishlist">🛍</button>
-      <a class="hbtn inkpkg" href="https://www.inmark.store" target="_blank" rel="noopener" title="магазин inmark">🛍<small>inmark</small></a>
+      <a class="hbtn inkpkg" href="https://www.inmark.store" target="_blank" rel="noopener" title="магазин inmark">🛍</a>
       <button class="hbtn" id="th">🌙</button>
     </div>
   </header>
@@ -554,7 +553,6 @@ const th=document.getElementById('th');const root=document.documentElement;
 const saved=localStorage.getItem('wb-theme');if(saved){root.dataset.theme=saved;th.textContent=saved==='dark'?'☀':'🌙';}
 th.addEventListener('click',()=>{const d=root.dataset.theme==='dark'?'light':'dark';root.dataset.theme=d;localStorage.setItem('wb-theme',d);th.textContent=d==='dark'?'☀':'🌙';document.querySelector('meta[name=theme-color]').setAttribute('content',d==='dark'?'#2B2926':'#F4E3E6');});
 
-document.getElementById('wish').addEventListener('click',()=>openSection('wish'));
 openSection('closet');
 </script>
 </body>
