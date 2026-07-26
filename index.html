@@ -28,6 +28,12 @@ header.top{position:relative;z-index:6;flex:none;background:var(--head);padding:
 .tabs{position:relative;z-index:5;flex:none;display:flex;background:var(--paper);border-bottom:1px solid var(--line)}
 .tabs button{flex:1;min-width:0;background:none;border:0;padding:10px 3px;font:500 11px 'Inter';color:var(--text);opacity:.5;cursor:pointer;border-bottom:2px solid transparent;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tabs button.on{opacity:1;color:var(--h);border-bottom-color:var(--h)}
+.tabs{transition:transform .26s ease}
+.app.hide-tabs>#tabs{transform:translateX(112%)}
+.tabs .tclose{flex:none;width:36px;background:none;border:0;color:var(--text);opacity:.45;font-size:19px;cursor:pointer;line-height:1}
+#tabs-show{display:none;position:absolute;top:0;left:0;right:0;height:16px;z-index:4;align-items:center;justify-content:center}
+.app.hide-tabs #tabs-show{display:flex}
+#tabs-show .grip{width:54px;height:5px;border-radius:3px;background:var(--line)}
 
 .workspace{position:relative;z-index:2;flex:1;display:flex;overflow:hidden;min-height:0}
 .tools{flex:none;width:52px;display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 0;background:var(--paper);border-right:1px solid var(--line)}
@@ -134,7 +140,9 @@ footer.bottom{position:relative;z-index:5;flex:none;background:var(--paper);bord
     <button data-sec="box">🎀 Капсула</button>
     <button data-sec="wish">⭐ Мечты</button>
     <button data-sec="guide">📖 Шпаргалка</button>
+    <button class="tclose" id="tclose" title="скрыть">×</button>
   </div>
+  <div id="tabs-show"><div class="grip"></div></div>
 
   <div class="workspace">
     <div class="tools">
@@ -528,6 +536,21 @@ const saved=localStorage.getItem('wb-theme');if(saved){root.dataset.theme=saved;
 th.addEventListener('click',()=>{const d=root.dataset.theme==='dark'?'light':'dark';root.dataset.theme=d;localStorage.setItem('wb-theme',d);th.textContent=d==='dark'?'☀':'🌙';document.querySelector('meta[name=theme-color]').setAttribute('content',d==='dark'?'#2B2926':'#F4E3E6');});
 
 document.getElementById('wish').addEventListener('click',()=>openSection('wish'));
+
+/* swipe-hide tabs (Шкаф и прочее): свайп вправо или кнопка × → скрыть; свайп влево или тап по ручке → показать */
+(function(){
+  const app=document.querySelector('.app'),tabs=document.getElementById('tabs');
+  const showGrip=document.getElementById('tabs-show'),tc=document.getElementById('tclose');
+  let sx=0,sy=0;
+  function hide(){app.classList.add('hide-tabs');}
+  function show(){app.classList.remove('hide-tabs');}
+  tc.addEventListener('click',hide);
+  showGrip.addEventListener('click',show);
+  tabs.addEventListener('touchstart',e=>{const t=e.touches[0];sx=t.clientX;sy=t.clientY;},{passive:true});
+  tabs.addEventListener('touchend',e=>{const t=e.changedTouches[0],dx=t.clientX-sx,dy=t.clientY-sy;if(dx>50&&dx>Math.abs(dy))hide();},{passive:true});
+  document.addEventListener('touchstart',e=>{if(!app.classList.contains('hide-tabs'))return;const t=e.touches[0];sx=t.clientX;},{passive:true});
+  document.addEventListener('touchend',e=>{if(!app.classList.contains('hide-tabs'))return;const t=e.changedTouches[0];if(t.clientX-sx<-50)show();},{passive:true});
+})();
 openSection('closet');
 </script>
 </body>
