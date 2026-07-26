@@ -134,8 +134,9 @@ footer.bottom{position:relative;z-index:5;flex:none;background:var(--paper);bord
       <button data-tool="sticker">✨<small>стикер</small></button>
       <div class="sep"></div>
       <button data-tool="me">🧍<small>я</small></button>
+      <div class="sep"></div>
       <button data-tool="undo">↶<small>назад</small></button>
-      <button data-tool="del">🗑<small>удалить</small></button>
+      <button data-tool="redo">↷<small>вперёд</small></button>
       <div class="sep"></div>
       <button class="dl" data-tool="download">⬇<small>скачать</small></button>
     </div>
@@ -154,6 +155,7 @@ footer.bottom{position:relative;z-index:5;flex:none;background:var(--paper);bord
       <div class="toolbar" id="d-tools">
         <button class="dd-btn" data-dd="dd-cat"><span id="cat-label">📂 Все</span><span class="caret">▾</span></button>
         <button class="dd-btn" data-dd="dd-sort"><span id="sort-label">↕ Новые</span><span class="caret">▾</span></button>
+        <button class="dd-btn" id="d-wear">☁ Не ношу</button>
         <button class="dd-btn" id="d-add">＋ Добавить</button>
       </div>
       <div class="body" id="d-body"></div>
@@ -176,9 +178,9 @@ footer.bottom{position:relative;z-index:5;flex:none;background:var(--paper);bord
 <script>
 const SECTIONS={
   closet:{title:'Шкаф',sub:'82 вещи · авто-оцифровка',type:'grid',
-    items:[['Бежевый трикотаж','Джемперы','sw1'],['Оливковый жакет','Жакеты','sw2'],['Розовый шёлк','Блузы','sw3'],['Джинсы','Джинсы','sw4'],['Графит брюки','Брюки','sw5'],['Белая рубашка','Рубашки','sw6'],['Платье','Платья','sw3'],['Куртка','Куртки','sw2']]},
+    items:[['Бежевый трикотаж','Джемперы','sw1',false],['Оливковый жакет','Жакеты','sw2',false],['Розовый шёлк','Блузы','sw3',false],['Джинсы','Джинсы','sw4',false],['Графит брюки','Брюки','sw5',false],['Белая рубашка','Рубашки','sw6',false],['Серый худи','Спортивные','sw5',true],['Старая юбка','Юбки','sw4',true],['Платье','Платья','sw3',false],['Куртка','Куртки','sw2',false]]},
   box:{title:'Шкатулка',sub:'стикеры и дополнения',type:'grid',
-    items:[['Тени для век','стикер','sw4'],['Помада','стикер','sw3'],['Платок','стикер','sw2'],['Брошь','стикер','sw1'],['Бант','стикер','sw5'],['Цветы','стикер','sw6']]},
+    items:[['Тени для век','стикер','sw4',false],['Помада','стикер','sw3',false],['Платок','стикер','sw2',false],['Брошь','стикер','sw1',false],['Бант','стикер','sw5',false],['Цветы','стикер','sw6',false]]},
   trip:{title:'Поездка',sub:'Сочи 28.07',type:'list',
     items:[['Объёмный верх + узкий низ','баланс силуэта',false],['Принт верх — низ однотон','один акцент',false],['Цветовой блок сезона','олива · тофу · графит',false],['⚑ Дыра: романтичная подпись','есть у inmark',true]]},
   wish:{title:'Мечты',sub:'карта желаний',type:'list',
@@ -187,10 +189,11 @@ const SECTIONS={
     items:[['1 · Объём × узкое','баланс силуэта',false],['2 · Принт × однотон','акцент рисунка',false],['3 · 3 цвета','олива·тофу·графит',false],['4 · Дорогая фактура','шёлк·кашемир·твид',false],['5 · Тихий акцент','подпись-платок',false]]}
 };
 const CATS=['Все','Платья','Юбки','Блузы','Рубашки','Джемперы','Футболки','Топы','Брюки','Джинсы','Спортивные','Шорты','Жакеты','Жилеты','Пальто','Пуховик','Куртки','Обувь','Сумки','Ремни','Платки','Украшения','Головные уборы','Купальники'];
+let curCat='Все', onlyWear=false;
 
 const catGrid=document.getElementById('cat-grid');
 CATS.forEach((c,i)=>{const b=document.createElement('button');b.textContent=(i===0?'📂 ':'')+c;b.dataset.c=c;if(i===0)b.classList.add('act');catGrid.appendChild(b);});
-catGrid.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{catGrid.querySelectorAll('button').forEach(x=>x.classList.remove('act'));b.classList.add('act');document.getElementById('cat-label').textContent=(b.dataset.c==='Все'?'📂 ':'')+b.dataset.c;closeDD();}));
+catGrid.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{catGrid.querySelectorAll('button').forEach(x=>x.classList.remove('act'));b.classList.add('act');curCat=b.dataset.c;document.getElementById('cat-label').textContent=(b.dataset.c==='Все'?'📂 ':'')+b.dataset.c;closeDD();renderCloset();}));
 document.querySelectorAll('#dd-sort button').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('#dd-sort button').forEach(x=>x.classList.remove('act'));b.classList.add('act');document.getElementById('sort-label').textContent=b.dataset.s;closeDD();}));
 
 const bd=document.getElementById('bd');
@@ -198,16 +201,35 @@ function closeDD(){document.querySelectorAll('.dd.on').forEach(d=>d.classList.re
 document.querySelectorAll('.dd-btn[data-dd]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();const m=document.getElementById(b.dataset.dd);const on=m.classList.contains('on');closeDD();if(!on){m.classList.add('on');bd.classList.add('on');}}));
 bd.addEventListener('click',closeDD);
 
-const drawer=document.getElementById('drawer');const dBody=document.getElementById('d-body');const tabBtns=document.querySelectorAll('#tabs button');
+const drawer=document.getElementById('drawer');const dBody=document.getElementById('d-body');const tabBtns=document.querySelectorAll('#tabs button');const dWear=document.getElementById('d-wear');
+function tileEl(it){
+  const t=document.createElement('div');t.className='tile '+(it[2]||'sw1');if(it[3])t.classList.add('worn');t.innerHTML='<i>'+it[0]+(it[3]?' · ☁':'')+'</i>';
+  t.addEventListener('click',()=>addToCanvas({type:'photo',cls:it[2],name:it[0]}));return t;
+}
+function renderCloset(){
+  dBody.innerHTML='';
+  const mc=document.createElement('div');mc.className='lc';mc.style.background='var(--rose)';
+  mc.innerHTML='<h3>✨ Мари Кондо: оставь то, что радует</h3><p>благодари вещь и отпусти то, что больше не откликается</p>';
+  dBody.appendChild(mc);
+  const g=document.createElement('div');g.className='grid';
+  SECTIONS.closet.items.filter(it=>{
+    if(onlyWear && !it[3])return false;
+    if(curCat!=='Все' && it[1]!==curCat)return false;
+    return true;
+  }).forEach(it=>g.appendChild(tileEl(it)));
+  const add=document.createElement('div');add.className='tile add';add.innerHTML='<span>＋</span>добавить';g.appendChild(add);
+  dBody.appendChild(g);
+}
 function openSection(key){
   const s=SECTIONS[key];
   document.getElementById('d-title').textContent=s.title;
   document.getElementById('d-sub').textContent=s.sub;
+  dWear.style.display=(key==='closet')?'':'none';
   dBody.innerHTML='';
-  if(s.type==='grid'){
+  if(key==='closet'){renderCloset();}
+  else if(s.type==='grid'){
     const g=document.createElement('div');g.className='grid';
-    s.items.forEach(it=>{const t=document.createElement('div');t.className='tile '+(it[2]||'sw1');t.innerHTML='<i>'+it[0]+'</i>';
-      t.addEventListener('click',()=>addToCanvas({type:'photo',cls:it[2],name:it[0]}));g.appendChild(t);});
+    s.items.forEach(it=>g.appendChild(tileEl(it)));
     const add=document.createElement('div');add.className='tile add';add.innerHTML='<span>＋</span>добавить';g.appendChild(add);
     dBody.appendChild(g);
   } else {
@@ -216,47 +238,79 @@ function openSection(key){
   tabBtns.forEach(b=>b.classList.toggle('on',b.dataset.sec===key));
   drawer.classList.add('on');
 }
-tabBtns.forEach(b=>b.addEventListener('click',()=>openSection(b.dataset.sec)));
+dWear.addEventListener('click',()=>{onlyWear=!onlyWear;dWear.classList.toggle('act-btn');dWear.style.background=onlyWear?'var(--olive)':'';dWear.style.color=onlyWear?'#FAF9F6':'';dWear.textContent=onlyWear?'☁ Не ношу (вкл)':'☁ Не ношу';renderCloset();});
+tabBtns.forEach(b=>b.addEventListener('click',()=>{onlyWear=false;dWear.style.background='';dWear.style.color='';dWear.textContent='☁ Не ношу';openSection(b.dataset.sec);}));
 document.getElementById('d-close').addEventListener('click',()=>{drawer.classList.remove('on');tabBtns.forEach(b=>b.classList.remove('on'));});
 
 const canvas=document.getElementById('canvas');const chint=document.getElementById('chint');
 let z=10,sel=null;
 function clearHint(){if(chint)chint.style.display='none';}
 function select(el){if(sel)sel.classList.remove('sel');sel=el;el.classList.add('sel');}
-function makeDrag(el){
-  el.addEventListener('pointerdown',e=>{
-    if(e.target.classList.contains('x'))return;
-    const r=canvas.getBoundingClientRect(),er=el.getBoundingClientRect();
-    const dx=e.clientX-er.left,dy=e.clientY-er.top;
-    select(el);
-    function mv(ev){el.style.left=(ev.clientX-r.left-dx)+'px';el.style.top=(ev.clientY-r.top-dy)+'px';}
-    function up(){window.removeEventListener('pointermove',mv);window.removeEventListener('pointerup',up);}
-    window.addEventListener('pointermove',mv);window.addEventListener('pointerup',up);
-  });
+function oxform(o){o.style.transform=`rotate(${o.dataset.rot||0}deg) scale(${o.dataset.sc||1})`;}
+function bindObj(o){const x=o.querySelector('.x');if(x)x.addEventListener('click',e=>{e.stopPropagation();o.remove();if(sel===o)sel=null;snapshot();});}
+function mkObjNode(){
+  const n=document.createElement('div');n.className='obj';
+  const x=document.createElement('div');x.className='x';x.textContent='×';n.appendChild(x);
+  n.dataset.sc=1;n.dataset.rot=0;
+  return n;
 }
 function addToCanvas(o){
   clearHint();
-  const n=document.createElement('div');n.className='obj';
-  const x=document.createElement('div');x.className='x';x.textContent='×';
-  x.addEventListener('click',e=>{e.stopPropagation();n.remove();if(sel===n)sel=null;});
-  n.appendChild(x);
+  const n=mkObjNode();
   if(o.type==='photo'){const im=document.createElement('div');im.style.width='74px';im.style.height='98px';im.className='ph '+o.cls;n.appendChild(im);}
   else if(o.type==='text'){n.classList.add('txt');n.appendChild(document.createTextNode('текст'));}
   else if(o.type==='sticker'){n.classList.add('stk');n.textContent='✨';}
   else if(o.type==='me'){n.classList.add('stk');n.textContent='🧍';}
   n.style.left=(40+Math.random()*40)+'px';n.style.top=(40+Math.random()*50)+'px';n.style.zIndex=++z;
-  n.addEventListener('pointerdown',e=>{e.stopPropagation();});
-  canvas.appendChild(n);select(n);makeDrag(n);
+  bindObj(n);canvas.appendChild(n);select(n);snapshot();
 }
-canvas.addEventListener('pointerdown',e=>{if(e.target===canvas||e.target===chint){if(sel){sel.classList.remove('sel');sel=null;}}});
+
+/* multi-touch: 1 палец = двигать, 2 пальца = вращать+масштаб */
+const pts=new Map();let drag=null,gest=null;
+canvas.addEventListener('pointerdown',e=>{
+  const o=e.target.closest('.obj');
+  try{canvas.setPointerCapture(e.pointerId);}catch(_){}
+  pts.set(e.pointerId,{x:e.clientX,y:e.clientY,o});
+  const arr=[...pts.values()];
+  if(arr.length===2 && arr[0].o && arr[0].o===arr[1].o){
+    select(arr[0].o);drag=null;
+    const dx=arr[1].x-arr[0].x,dy=arr[1].y-arr[0].y;
+    gest={o:arr[0].o,d0:Math.hypot(dx,dy)||1,a0:Math.atan2(dy,dx),sc:parseFloat(arr[0].o.dataset.sc||1),rt:parseFloat(arr[0].o.dataset.rot||0)};
+  } else if(arr.length===1 && o){
+    select(o);const r=canvas.getBoundingClientRect();
+    drag={o,dx:e.clientX-r.left-parseFloat(o.style.left||0),dy:e.clientY-r.top-parseFloat(o.style.top||0)};
+  } else if(!o){if(sel){sel.classList.remove('sel');sel=null;}}
+});
+canvas.addEventListener('pointermove',e=>{
+  if(!pts.has(e.pointerId))return;
+  pts.set(e.pointerId,{...pts.get(e.pointerId),x:e.clientX,y:e.clientY});
+  if(gest){const a=[...pts.values()];const dx=a[1].x-a[0].x,dy=a[1].y-a[0].y;let s=gest.sc*(Math.hypot(dx,dy)/gest.d0);s=Math.max(.3,Math.min(s,4));const r=gest.rt+(Math.atan2(dy,dx)-gest.a0)*180/Math.PI;gest.o.dataset.sc=s;gest.o.dataset.rot=r;oxform(gest.o);}
+  else if(drag&&pts.size===1){const r=canvas.getBoundingClientRect();drag.o.style.left=(e.clientX-r.left-drag.dx)+'px';drag.o.style.top=(e.clientY-r.top-drag.dy)+'px';}
+});
+function endPt(e){const acted=gest||drag;pts.delete(e.pointerId);if(pts.size<2)gest=null;if(pts.size===0){drag=null;if(acted)snapshot();}}
+canvas.addEventListener('pointerup',endPt);canvas.addEventListener('pointercancel',endPt);
+
+/* undo / redo */
+let hist=[[]],hi=0;
+function snapshot(){
+  const st=[...canvas.querySelectorAll('.obj')].map(o=>({l:o.style.left,t:o.style.top,sc:o.dataset.sc,rt:o.dataset.rot,html:o.innerHTML,cls:o.className.replace(' sel','')}));
+  hist=hist.slice(0,hi+1);hist.push(st);hi=hist.length-1;
+}
+function restore(){
+  [...canvas.querySelectorAll('.obj')].forEach(o=>o.remove());
+  const st=hist[hi]||[];let last=null;
+  st.forEach(s=>{const o=document.createElement('div');o.className=s.cls;o.innerHTML=s.html;o.style.left=s.l;o.style.top=s.t;if(s.sc){o.dataset.sc=s.sc;o.dataset.rt=s.rt;oxform(o);}bindObj(o);canvas.appendChild(o);last=o;});
+  sel=null;clearHint();if(!st.length&&chint)chint.style.display='';
+}
+
 document.querySelectorAll('.tools button').forEach(b=>b.addEventListener('click',()=>{
   const t=b.dataset.tool;
   if(t==='photo')addToCanvas({type:'photo',cls:'sw1'});
   else if(t==='text')addToCanvas({type:'text'});
   else if(t==='sticker')addToCanvas({type:'sticker'});
   else if(t==='me')addToCanvas({type:'me'});
-  else if(t==='undo'){const c=canvas.querySelector('.obj:last-of-type');if(c)c.remove();}
-  else if(t==='del'){if(sel){sel.remove();sel=null;}}
+  else if(t==='undo'){if(hi>0){hi--;restore();}}
+  else if(t==='redo'){if(hi<hist.length-1){hi++;restore();}}
   else if(t==='download'){alert('⬇ Скачать образ в PDF — скоро тут');}
 }));
 
