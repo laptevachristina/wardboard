@@ -328,7 +328,7 @@ document.querySelectorAll('.tools button').forEach(b=>b.addEventListener('click'
   else if(t==='me')addToCanvas({type:'me'});
   else if(t==='undo'){if(hi>0){hi--;restore();}}
   else if(t==='redo'){if(hi<hist.length-1){hi++;restore();}}
-  else if(t==='download'){alert('⬇ Скачать образ в PDF — скоро тут');}
+  else if(t==='download'){alert('Сохранить образ — скоро тут');}
 }));
 
 const th=document.getElementById('th');const root=document.documentElement;
