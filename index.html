@@ -109,6 +109,15 @@ footer.bottom{position:relative;z-index:5;flex:none;background:var(--paper);bord
 .colorpick.on{display:flex}
 .colorpick input[type=color]{width:48px;height:40px;border:0;background:none;cursor:pointer}
 .colorpick button{border:1px solid var(--olive);background:var(--olive);color:#FAF9F6;border-radius:9px;padding:8px;font-size:12px;cursor:pointer}
+/* policy modal */
+.policy{position:absolute;inset:0;z-index:50;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;padding:24px}
+.policy.on{display:flex}
+.policy-card{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:24px 22px 20px;position:relative;max-width:340px;box-shadow:0 16px 44px rgba(0,0,0,.25)}
+.policy-card h3{font-family:'Cormorant Garamond',serif;color:var(--h);font-size:24px;margin:0 0 10px}
+.policy-card p{font-size:13px;line-height:1.5;opacity:.85;margin:0 0 16px}
+.policy-card .btn{background:var(--olive);color:#FAF9F6;border:0;border-radius:11px;padding:10px 18px;font:500 13px 'Inter';cursor:pointer;width:100%}
+[data-theme="dark"] .policy-card .btn{background:var(--h);color:#2B2926}
+.policy-card .qx{position:absolute;top:10px;right:10px;width:26px;height:26px;border-radius:50%;border:1px solid var(--line);background:var(--win);color:var(--text);font-size:14px;cursor:pointer}
 </style>
 </head>
 <body>
@@ -139,6 +148,8 @@ footer.bottom{position:relative;z-index:5;flex:none;background:var(--paper);bord
       <button data-tool="me">🙋<small>я</small></button>
       <button data-tool="undo">↶<small>назад</small></button>
       <button data-tool="redo">↷<small>вперёд</small></button>
+      <div class="sep"></div>
+      <button id="dl">⬇<small>скачать</small></button>
     </div>
 
     <div class="stage">
@@ -168,17 +179,21 @@ footer.bottom{position:relative;z-index:5;flex:none;background:var(--paper);bord
     </div>
   </div>
 
-  <footer class="bottom">
-    <button class="fbtn" id="dl">⬇ Скачать</button>
-    <span class="fspacer"></span>
-    <button class="fbtn" id="quote-btn">❝ Цитата</button>
-  </footer>
-
   <!-- quote toast -->
   <div class="quote" id="quote">
     <button class="qx" id="q-close">×</button>
     <div class="q" id="q-text"></div>
     <div class="a" id="q-author"></div>
+  </div>
+
+  <!-- privacy policy (once) -->
+  <div class="policy" id="policy">
+    <div class="policy-card">
+      <button class="qx" id="pol-close">×</button>
+      <h3>Конфиденциальность</h3>
+      <p>Мы <b>не храним</b> ваши персональные данные и фотографии. Изображения используются только для стилистического анализа и удаляются сразу после. <b>Не используются для идентификации личности</b> и не передаются третьим лицам.</p>
+      <button class="btn" id="pol-ok">Понятно</button>
+    </div>
   </div>
 </div>
 
@@ -203,22 +218,39 @@ const QUOTES=[
  ['·«Одевайся так, как будто сегодня увидишь своего злейшего врага.»','Коко Шанель'],
  ['«Меньше, да лучше.»','Вивьен Вествуд']
 ];
-// Сезонные цветовые сочетания (обновляемые). Сейчас хранятся в коде — обновляю через git push.
-// Когда поднимем сервер TimeWeb — перенесём туда, сможешь править сама без деплоя.
+// Сезонные палитры — реальные тренды (Pantone SS2026; Coloro/WGSN AW 2026/27).
+// Сейчас в коде, обновляю через git push. Позже перенесём на сервер — сможешь править сама.
 const SEASONS=[
- {s:'Осень–Зима 2026',name:'Терракота + крем',colors:['#B5602E','#EFE4D2','#312F2C']},
- {s:'Осень–Зима 2026',name:'Олива + карамель',colors:['#6E7A4B','#C99A5B','#3F2E1F']},
- {s:'Осень–Зима 2026',name:'Бордо + пыльная роза',colors:['#7A2B2E','#D9A6AE','#EFE4D2']},
- {s:'Весна–Лето 2027',name:'Мята + песок',colors:['#A9C2B0','#E2D2B0','#312F2C']},
- {s:'Весна–Лето 2027',name:'Лаванда + крем',colors:['#B8A8C4','#EFE4D2','#5A5363']}
+ // ЛЕТО 2026 (актуально)
+ {s:'☀ Лето 2026',name:'Помидор + песок + мёд',colors:['#B23A2E','#E8E0D2','#E8C547']},
+ {s:'☀ Лето 2026',name:'Бирюза + сирень + дыня',colors:['#1F6F6B','#C9B9C9','#E89B6F']},
+ {s:'☀ Лето 2026',name:'Цитрус + олива + мандарин',colors:['#E8C547','#6E7A4B','#E07A2C']},
+ // ОСЕНЬ–ЗИМА 2026/2027
+ {s:'🍂 Осень–Зима 26/27',name:'Какао + воск + бирюза',colors:['#6B4A3A','#E8E0D2','#1F7A85']},
+ {s:'🍂 Осень–Зима 26/27',name:'Фиолетовый + glow + какао',colors:['#8E5FA8','#B5C93B','#6B4A3A']},
+ {s:'🍂 Осень–Зима 26/27',name:'Сиена + бордо + мандарин',colors:['#A45A3D','#8B2C5C','#E07A2C']}
 ];
 
-/* ============ QUOTE ============ */
-const qb=document.getElementById('quote-btn'),qbox=document.getElementById('quote');
+/* ============ QUOTE (auto popup, no button) ============ */
+const qbox=document.getElementById('quote');
 function showQuote(){const q=QUOTES[Math.floor(Math.random()*QUOTES.length)];document.getElementById('q-text').textContent=q[0];document.getElementById('q-author').textContent='— '+q[1];qbox.classList.add('on');}
-qb.addEventListener('click',showQuote);
 document.getElementById('q-close').addEventListener('click',()=>qbox.classList.remove('on'));
-setTimeout(showQuote,400);
+setTimeout(showQuote,600);
+
+/* ============ PRIVACY POLICY (once) ============ */
+const polbox=document.getElementById('policy');
+if(!localStorage.getItem('wb-policy')){polbox.classList.add('on');}
+function closePolicy(){polbox.classList.remove('on');localStorage.setItem('wb-policy','1');}
+document.getElementById('pol-close').addEventListener('click',closePolicy);
+document.getElementById('pol-ok').addEventListener('click',closePolicy);
+
+/* ============ CAMERA / GALLERY PICKER ============ */
+function pickImage(){
+  const input=document.createElement('input');
+  input.type='file';input.accept='image/*';
+  input.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>addToCanvas({type:'photo',src:r.result,name:'моё фото'});r.readAsDataURL(f);};
+  input.click();
+}
 
 /* ============ DRAWER ============ */
 const drawer=document.getElementById('drawer'),dBody=document.getElementById('d-body'),tabBtns=document.querySelectorAll('#tabs button');
@@ -257,7 +289,7 @@ function openSection(key){
       t.addEventListener('click',()=>{addToCanvas({type:isSticker?'sticker':'photo',cls:it[2],name:it[0]});if(!isSticker)markUsed(it[0]);});
       g.appendChild(t);
     });
-    const add=document.createElement('div');add.className='tile add';add.innerHTML='<span>＋</span>добавить';g.appendChild(add);
+    const add=document.createElement('div');add.className='tile add';add.innerHTML='<span>＋</span>добавить';add.addEventListener('click',pickImage);g.appendChild(add);
     dBody.appendChild(g);
   } else if(s.type==='guide'){
     const intro=document.createElement('div');intro.className='hint-add';intro.textContent='→ тапни формулу или палитру — попадёт на доску';dBody.appendChild(intro);
@@ -353,7 +385,7 @@ function makeObj(o){
   clearHint();
   const el=document.createElement('div');el.className='obj';
   const x=document.createElement('div');x.className='x';x.textContent='×';el.appendChild(x);
-  if(o.type==='photo'){const im=document.createElement('div');im.style.width='76px';im.style.height='100px';im.className='ph '+(o.cls||'sw1');el.appendChild(im);}
+  if(o.type==='photo'){const im=document.createElement('div');im.style.width='80px';im.style.height='104px';im.className='ph '+(o.cls||'sw1');if(o.src){im.style.backgroundImage='url('+o.src+')';im.style.backgroundSize='cover';im.style.backgroundPosition='center';}el.appendChild(im);}
   else if(o.type==='text'){el.classList.add('txt');el.appendChild(document.createTextNode('текст'));}
   else if(o.type==='sticker'){el.classList.add('stk');el.textContent='✨';}
   else if(o.type==='me'){el.classList.add('stk');el.textContent='🙋';}
@@ -431,7 +463,7 @@ document.querySelectorAll('#fmt .tg').forEach(b=>b.addEventListener('click',()=>
 /* tools */
 document.querySelectorAll('.tools button').forEach(b=>b.addEventListener('click',()=>{
   const t=b.dataset.tool;
-  if(t==='photo')addToCanvas({type:'photo',cls:'sw1'});
+  if(t==='photo')pickImage();
   else if(t==='text')addToCanvas({type:'text'});
   else if(t==='sticker')addToCanvas({type:'sticker'});
   else if(t==='me')addToCanvas({type:'me'});
