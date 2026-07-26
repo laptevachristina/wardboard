@@ -52,7 +52,7 @@ header.top{position:relative;z-index:6;flex:none;background:var(--head);padding:
 .inkpkg small{font-size:7px;margin-top:1px;font-weight:400}
 .wbmark{position:absolute;bottom:8px;left:0;right:0;text-align:center;font:italic 13px 'Cormorant Garamond',serif;color:var(--h);opacity:.5;pointer-events:none;z-index:9999}
 .obj.sel{outline:2px dashed var(--h);outline-offset:4px}
-.obj .x{position:absolute;top:-10px;right:-10px;width:22px;height:22px;border-radius:50%;background:var(--paper);color:var(--h);border:1.5px solid var(--h);font-size:13px;line-height:1;display:none;align-items:center;justify-content:center;cursor:pointer;z-index:9500;box-shadow:0 2px 6px rgba(0,0,0,.15)}
+.obj .x{position:absolute;top:-11px;right:-11px;width:26px;height:26px;border-radius:50%;background:var(--paper);color:var(--h);border:1.5px solid var(--h);font-size:18px;font-weight:300;line-height:24px;text-align:center;display:none;cursor:pointer;z-index:9500;box-shadow:0 2px 6px rgba(0,0,0,.18)}
 .obj.sel .x{display:flex}
 .obj .ph{border-radius:8px;background:#E4DDCF;background-size:cover;background-position:center}
 .obj.txt{font-family:'Cormorant Garamond',serif;color:var(--h);font-size:22px;white-space:nowrap;padding:2px 5px;line-height:1.05}
@@ -118,6 +118,16 @@ footer.bottom{position:relative;z-index:5;flex:none;background:var(--paper);bord
 .policy-card .btn{background:var(--olive);color:#FAF9F6;border:0;border-radius:11px;padding:10px 18px;font:500 13px 'Inter';cursor:pointer;width:100%}
 [data-theme="dark"] .policy-card .btn{background:var(--h);color:#2B2926}
 .policy-card .qx{position:absolute;top:10px;right:10px;width:26px;height:26px;border-radius:50%;border:1px solid var(--line);background:var(--win);color:var(--text);font-size:14px;cursor:pointer}
+/* text edit modal */
+.em{position:absolute;inset:0;z-index:60;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;padding:20px}
+.em.on{display:flex}
+.em-card{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:18px;width:100%;max-width:340px;box-shadow:0 16px 44px rgba(0,0,0,.25)}
+.em-card textarea{width:100%;font:400 16px 'Cormorant Garamond',serif;color:var(--text);background:var(--win);border:1px solid var(--line);border-radius:11px;padding:12px;resize:none;outline:none;box-sizing:border-box}
+.em-btns{display:flex;gap:8px;margin-top:12px;justify-content:flex-end}
+.em-c,.em-o{border-radius:10px;padding:10px 18px;font:500 13px 'Inter';cursor:pointer;border:1px solid var(--line)}
+.em-c{background:var(--win);color:var(--text)}
+.em-o{background:var(--olive);color:#FAF9F6;border-color:var(--olive)}
+[data-theme="dark"] .em-o{background:var(--h);color:#2B2926;border-color:var(--h)}
 </style>
 </head>
 <body>
@@ -191,6 +201,14 @@ footer.bottom{position:relative;z-index:5;flex:none;background:var(--paper);bord
       <h3>Конфиденциальность</h3>
       <p>Мы <b>не храним</b> ваши персональные данные и фотографии. Изображения используются только для стилистического анализа и удаляются сразу после. <b>Не используются для идентификации личности</b> и не передаются третьим лицам.</p>
       <button class="btn" id="pol-ok">Понятно</button>
+    </div>
+  </div>
+
+  <!-- text edit modal (mobile-safe) -->
+  <div class="em" id="em">
+    <div class="em-card">
+      <textarea id="em-ta" rows="3" placeholder="введите текст"></textarea>
+      <div class="em-btns"><button class="em-c" id="em-cancel">отмена</button><button class="em-o" id="em-ok">готово</button></div>
     </div>
   </div>
 </div>
@@ -413,21 +431,21 @@ function placeCtx(el){
 }
 function bindObj(el){
   el.addEventListener('pointerdown',onObjDown);
-  el.addEventListener('dblclick',e=>{
-    if(!el.classList.contains('txt')||el.classList.contains('formula')||el.isContentEditable)return;
-    e.stopPropagation();startEdit(el);
-  });
-  el.addEventListener('blur',()=>{if(el.isContentEditable){el.contentEditable='false';}});
   const x=el.querySelector('.x');if(x)x.addEventListener('click',e=>{e.stopPropagation();pushHist();el.remove();deselect();updateHint();});
 }
-function startEdit(el){
-  el.contentEditable='true';el.focus();
+/* text editing via centered modal (mobile-safe) */
+let editTarget=null;
+function openEdit(el){
+  editTarget=el;
   const sp=el.querySelector('.tc');const node=sp||el;
-  const r=document.createRange();r.selectNodeContents(node);
-  const s=window.getSelection();s.removeAllRanges();r.selectNodeContents(node);s.addRange(r);
-  ctx.classList.remove('on');
+  const ta=document.getElementById('em-ta');
+  ta.value=(node.textContent||'').trim();
+  document.getElementById('em').classList.add('on');
+  setTimeout(()=>ta.focus(),50);
 }
-function endEdit(){const ed=canvas.querySelector('.obj[contenteditable="true"]');if(ed){ed.contentEditable='false';ed.blur();}}
+document.getElementById('em-ok').addEventListener('click',()=>{const ta=document.getElementById('em-ta');if(editTarget){pushHist();const sp=editTarget.querySelector('.tc');const v=ta.value||' ';if(sp)sp.textContent=v;else editTarget.textContent=v;}closeEdit();});
+document.getElementById('em-cancel').addEventListener('click',closeEdit);
+function closeEdit(){document.getElementById('em').classList.remove('on');editTarget=null;}
 
 function makeObj(o){
   pushHist();
@@ -454,15 +472,12 @@ function tf(el,s,r){el.style.transform='rotate('+r+'deg) scale('+s+')';}
 function onObjDown(e){
   if(e.target.classList.contains('x'))return;
   const el=e.currentTarget;
-  if(el.isContentEditable)return;
   e.stopPropagation();e.preventDefault();
-  /* tap an already-selected text block -> edit it */
-  if(sel===el && el.classList.contains('txt') && !el.classList.contains('formula')){startEdit(el);return;}
   select(el);
   pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
   el.setPointerCapture(e.pointerId);
   ctx.style.opacity='0';
-  if(pointers.size===1){dragState={id:e.pointerId,dx:e.clientX-rect(el).left,dy:e.clientY-rect(el).top,s:parseFloat(el.dataset.scale),r:parseFloat(el.dataset.rot)};}
+  if(pointers.size===1){dragState={id:e.pointerId,dx:e.clientX-rect(el).left,dy:e.clientY-rect(el).top,s:parseFloat(el.dataset.scale),r:parseFloat(el.dataset.rot),sx:e.clientX,sy:e.clientY,moved:false};}
   else if(pointers.size===2){dragState=null;startPinch();}
   el.addEventListener('pointermove',onObjMove);
   el.addEventListener('pointerup',onObjUp);
@@ -476,17 +491,20 @@ function onObjMove(e){
   const el=sel;if(!el)return;
   if(pointers.size>=2&&pinchState){doPinch(e,el);return;}
   if(dragState&&e.pointerId===dragState.id){
+    if(Math.hypot(e.clientX-dragState.sx,e.clientY-dragState.sy)>5)dragState.moved=true;
     el.style.left=(e.clientX-cr().left-dragState.dx)+'px';
     el.style.top=(e.clientY-cr().top-dragState.dy)+'px';
   }
 }
 function onObjUp(e){
-  pointers.delete(e.pointerId);
   const el=e.currentTarget;
+  const wasTap=dragState&&!dragState.moved&&pointers.size===0;
+  pointers.delete(e.pointerId);
   if(pointers.size<2){pinchState=null;}
   if(pointers.size===0){dragState=null;el.removeEventListener('pointermove',onObjMove);el.removeEventListener('pointerup',onObjUp);el.removeEventListener('pointercancel',onObjUp);}
-  else if(pointers.size===1){const[id]=pointers.keys();const p=pointers.get(id);dragState={id,dx:p.x-rect(el).left,dy:p.y-rect(el).top,s:parseFloat(el.dataset.scale),r:parseFloat(el.dataset.rot)};}
+  else if(pointers.size===1){const[id]=pointers.keys();const p=pointers.get(id);dragState={id,dx:p.x-rect(el).left,dy:p.y-rect(el).top,s:parseFloat(el.dataset.scale),r:parseFloat(el.dataset.rot),sx:p.x,sy:p.y,moved:false};}
   if(sel){placeCtx(sel);ctx.style.opacity='1';}
+  if(wasTap&&sel===el&&sel.classList.contains('txt')&&!sel.classList.contains('formula')&&!sel.classList.contains('quote')){openEdit(sel);}
 }
 function startPinch(){
   const[pts]=[...pointers.values()];if(pts.length<2)return;
@@ -503,7 +521,7 @@ function doPinch(e,el){
 function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y)}
 function angle(a,b){return Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI}
 
-canvas.addEventListener('pointerdown',e=>{if(e.target===canvas||e.target===chint){endEdit();deselect();}});
+canvas.addEventListener('pointerdown',e=>{if(e.target===canvas||e.target===chint){deselect();}});
 
 /* contextual: layers + text format */
 document.getElementById('lyr-up').addEventListener('click',()=>{if(!sel)return;pushHist();sel.style.zIndex=++zmax;});
