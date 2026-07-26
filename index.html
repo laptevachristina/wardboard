@@ -87,6 +87,13 @@ footer.bottom{position:relative;z-index:5;flex:none;background:var(--paper);bord
 .sw1{background:#E4DDCF}.sw2{background:#D6DEC4}.sw3{background:#F4E3E6}.sw4{background:#D8D6E2}.sw5{background:#CECECE}.sw6{background:#F2EFE8}
 .tile.add{border:1.5px dashed var(--h);background:transparent;color:var(--h);align-items:center;justify-content:center;flex-direction:column;gap:3px;font-size:10px}
 .tile.add span{font-size:22px}
+.tile.unused{position:relative}
+.tile.unused::after{content:'';position:absolute;inset:0;background:rgba(196,72,72,.20);pointer-events:none}
+.tile.unused .badge{position:absolute;top:5px;left:5px;background:#C44848;color:#fff;font-size:8px;padding:2px 5px;border-radius:6px;z-index:2;letter-spacing:.04em}
+.filter-btn{border:1px solid var(--h);background:transparent;color:var(--h);border-radius:9px;padding:5px 9px;font:500 10px 'Inter';cursor:pointer;white-space:nowrap}
+.filter-btn.on{background:var(--olive);color:#FAF9F6;border-color:var(--olive)}
+[data-theme="dark"] .filter-btn.on{background:var(--h);color:#2B2926}
+.drawer-filter{padding:8px 12px;border-bottom:1px solid var(--line);display:flex;gap:6px}
 .lc{background:var(--win);border-radius:13px;padding:13px;margin-bottom:9px}
 .lc h3{font-family:'Cormorant Garamond',serif;color:var(--h);margin:0 0 4px;font-size:19px}
 .lc p{margin:0;font-size:12.5px;opacity:.75}
@@ -216,6 +223,11 @@ setTimeout(showQuote,400);
 /* ============ DRAWER ============ */
 const drawer=document.getElementById('drawer'),dBody=document.getElementById('d-body'),tabBtns=document.querySelectorAll('#tabs button');
 const USER_COLORS_KEY='wb-palette';
+const USAGE_KEY='wb-usage';
+function loadUsage(){try{return JSON.parse(localStorage.getItem(USAGE_KEY))||{}}catch(e){return{}}}
+function saveUsage(u){localStorage.setItem(USAGE_KEY,JSON.stringify(u))}
+function markUsed(name){const u=loadUsage();u[name]=(u[name]||0)+1;saveUsage(u);}
+let closetFilter='all';
 function loadPal(){try{return JSON.parse(localStorage.getItem(USER_COLORS_KEY))||[]}catch(e){return[]}}
 function savePal(a){localStorage.setItem(USER_COLORS_KEY,JSON.stringify(a))}
 function openSection(key){
@@ -225,9 +237,26 @@ function openSection(key){
   dBody.innerHTML='';
   if(s.addhint){const h=document.createElement('div');h.className='hint-add';h.textContent='→ '+s.addhint;dBody.appendChild(h);}
   if(s.type==='grid'){
+    // filter bar only for closet
+    const usage=loadUsage();
+    if(key==='closet'){
+      const unusedCount=s.items.filter(it=>!usage[it[0]]).length;
+      const fbar=document.createElement('div');fbar.className='drawer-filter';
+      fbar.innerHTML='<button class="filter-btn '+(closetFilter==='all'?'on':'')+'" data-f="all">все '+s.items.length+'</button>'+
+        '<button class="filter-btn '+(closetFilter==='unused'?'on':'')+'" data-f="unused">не ношу '+unusedCount+'</button>';
+      dBody.appendChild(fbar);
+      fbar.querySelectorAll('.filter-btn').forEach(b=>b.addEventListener('click',()=>{closetFilter=b.dataset.f;openSection('closet');}));
+    }
     const g=document.createElement('div');g.className='grid';
-    s.items.forEach(it=>{const t=document.createElement('div');t.className='tile '+(it[2]||'sw1');t.innerHTML='<i>'+it[0]+'</i>';
-      t.addEventListener('click',()=>{addToCanvas({type:it[1]==='стикер'?'sticker':'photo',cls:it[2],name:it[0]});});g.appendChild(t);});
+    s.items.forEach(it=>{
+      const isSticker=it[1]==='стикер';
+      if(key==='closet' && closetFilter==='unused' && usage[it[0]])return; // skip used when filtering unused
+      const t=document.createElement('div');t.className='tile '+(it[2]||'sw1');
+      t.innerHTML='<i>'+it[0]+'</i>';
+      if(key==='closet' && !isSticker && !usage[it[0]]){t.classList.add('unused');const b=document.createElement('span');b.className='badge';b.textContent='не ношу';t.appendChild(b);}
+      t.addEventListener('click',()=>{addToCanvas({type:isSticker?'sticker':'photo',cls:it[2],name:it[0]});if(!isSticker)markUsed(it[0]);});
+      g.appendChild(t);
+    });
     const add=document.createElement('div');add.className='tile add';add.innerHTML='<span>＋</span>добавить';g.appendChild(add);
     dBody.appendChild(g);
   } else if(s.type==='guide'){
