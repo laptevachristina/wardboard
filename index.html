@@ -61,6 +61,8 @@ header.top{position:relative;z-index:5;flex:none;background:var(--head);padding:
 .tpal .dot.act{box-shadow:0 0 0 2px var(--h)}
 .tpal .pick{width:26px;height:26px;border-radius:50%;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;border:2px dashed var(--h);font-size:12px}
 .tpal .pick input{position:absolute;inset:-4px;opacity:0;cursor:pointer;width:34px;height:34px}
+.tpal .add-fav{border:2px dashed var(--h);background:transparent;color:var(--h);font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center}
+.tpal-hint{font-size:10px;opacity:.55;margin-top:6px;text-align:center}
 .trow.btns{display:flex;gap:8px;margin-bottom:0}
 .trow.btns button{flex:1;border:0;border-radius:9px;padding:9px;font:500 13px 'Inter';cursor:pointer}
 #t-add{background:var(--olive);color:#FAF9F6}
@@ -170,16 +172,8 @@ footer.bottom{position:relative;z-index:5;flex:none;background:var(--paper);bord
           <option value="p">Курсив-лого — Pinyon</option>
         </select></div>
         <div class="trow"><input type="text" id="t-text" value="текст" placeholder="введи текст"></div>
-        <div class="trow tpal" id="tpal">
-          <button class="dot act" data-c="#6E7A4B" style="background:#6E7A4B"></button>
-          <button class="dot" data-c="#312F2C" style="background:#312F2C"></button>
-          <button class="dot" data-c="#C98A93" style="background:#C98A93"></button>
-          <button class="dot" data-c="#7B3F61" style="background:#7B3F61"></button>
-          <button class="dot" data-c="#8B7355" style="background:#8B7355"></button>
-          <button class="dot" data-c="#2F4F4F" style="background:#2F4F4F"></button>
-          <button class="dot" data-c="#FFFFFF" style="background:#FFFFFF"></button>
-          <label class="pick">💧<input type="color" id="t-pick" value="#6E7A4B"></label>
-        </div>
+        <div class="trow tpal" id="tpal"></div>
+        <div class="tpal-hint">тап — выбрать · ＋ — добавить в любимые · удержание — удалить</div>
         <div class="trow btns">
           <button id="t-add">＋ добавить</button>
           <button id="t-close">отмена</button>
@@ -369,9 +363,26 @@ const th=document.getElementById('th');const root=document.documentElement;
 /* текст-панель: стиль задает пользователь */
 const STYLES={h:{f:"'Cormorant Garamond',serif",s:28,i:false,w:600},s:{f:"'Cormorant Garamond',serif",s:20,i:true,w:500},b:{f:"'Inter',sans-serif",s:15,i:false,w:300},p:{f:"'Pinyon Script',cursive",s:32,i:false,w:400}};
 let tColor='#6E7A4B';
-const tpal=document.getElementById('tpal');
-tpal.querySelectorAll('.dot').forEach(d=>d.addEventListener('click',()=>{tpal.querySelectorAll('.dot').forEach(x=>x.classList.remove('act'));d.classList.add('act');tColor=d.dataset.c;}));
-document.getElementById('t-pick').addEventListener('input',e=>{tColor=e.target.value;tpal.querySelectorAll('.dot').forEach(x=>x.classList.remove('act'));});
+let fav=JSON.parse(localStorage.getItem('wb-pal')||'null')||['#6E7A4B','#312F2C','#C98A93','#7B3F61','#8B7355','#2F4F4F'];
+function saveFav(){localStorage.setItem('wb-pal',JSON.stringify(fav));}
+function markAct(){document.querySelectorAll('#tpal .dot:not(.add-fav)').forEach(d=>d.classList.toggle('act',d.dataset.c===tColor));}
+function renderPal(){
+  const tpal=document.getElementById('tpal');tpal.innerHTML='';
+  fav.forEach(c=>{
+    const d=document.createElement('button');d.className='dot';d.style.background=c;d.dataset.c=c;if(c===tColor)d.classList.add('act');
+    let timer=null;
+    d.addEventListener('pointerdown',e=>{e.preventDefault();timer=setTimeout(()=>{timer=null;d.classList.add('removing');setTimeout(()=>{fav=fav.filter(x=>x!==c);saveFav();renderPal();},120);},550);});
+    function cancel(){if(timer){clearTimeout(timer);timer=null;tColor=c;markAct();}}
+    d.addEventListener('pointerup',cancel);d.addEventListener('pointerleave',()=>{if(timer){clearTimeout(timer);timer=null;}});
+    tpal.appendChild(d);
+  });
+  const add=document.createElement('button');add.className='dot add-fav';add.textContent='＋';
+  add.addEventListener('click',()=>{if(!fav.includes(tColor)){fav.push(tColor);saveFav();renderPal();}});
+  tpal.appendChild(add);
+  const pick=document.createElement('label');pick.className='pick';pick.innerHTML='💧<input type="color" value="'+tColor+'">';
+  pick.querySelector('input').addEventListener('input',e=>{tColor=e.target.value;markAct();});
+  tpal.appendChild(pick);
+}
 document.getElementById('t-close').addEventListener('click',()=>document.getElementById('tpanel').classList.remove('on'));
 document.getElementById('t-add').addEventListener('click',()=>{
   const k=document.getElementById('t-type').value;const st=STYLES[k];
@@ -379,6 +390,7 @@ document.getElementById('t-add').addEventListener('click',()=>{
   addToCanvas({type:'text',font:st.f,size:st.s,italic:st.i,weight:st.w,color:tColor,txt:txt});
   document.getElementById('tpanel').classList.remove('on');
 });
+renderPal();
 const saved=localStorage.getItem('wb-theme');if(saved){root.dataset.theme=saved;th.textContent=saved==='dark'?'☀':'🌙';}
 th.addEventListener('click',()=>{const d=root.dataset.theme==='dark'?'light':'dark';root.dataset.theme=d;localStorage.setItem('wb-theme',d);th.textContent=d==='dark'?'☀':'🌙';document.querySelector('meta[name=theme-color]').setAttribute('content',d==='dark'?'#2B2926':'#F4E3E6');});
 
