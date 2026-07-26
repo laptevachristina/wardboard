@@ -40,23 +40,20 @@ header.top{position:relative;z-index:6;flex:none;background:var(--head);padding:
 [data-theme="dark"] .canvas{background:#322F2A}
 .canvas>.hint{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--h);opacity:.4;text-align:center;padding:20px;font-family:'Cormorant Garamond',serif;font-size:15px;pointer-events:none}
 .canvas>.hint span{font-size:28px;margin-bottom:6px}
-.obj{position:absolute;transform-origin:center center;touch-action:none}
+.ctx{position:absolute;z-index:9000;display:none;gap:5px;align-items:center;padding:5px;background:var(--paper);border:1px solid var(--olive);border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.18);font-family:'Inter'}
+.ctx.on{display:flex}
+.ctx .grp{display:inline-flex;gap:3px}
+.ctx button{border:1px solid var(--line);background:var(--win);color:var(--text);border-radius:7px;padding:6px 8px;font:500 13px 'Inter';cursor:pointer}
+.ctx #inmark-go{background:var(--olive);color:#FAF9F6;border-color:var(--olive);font-size:11.5px;padding:6px 9px}
+[data-theme="dark"] .ctx #inmark-go{background:var(--h);color:#2B2926;border-color:var(--h)}
+.ctx .tg.act{background:var(--olive);color:#FAF9F6}
+.wbmark{position:absolute;bottom:8px;left:0;right:0;text-align:center;font:italic 13px 'Cormorant Garamond',serif;color:var(--h);opacity:.5;pointer-events:none;z-index:9999}
 .obj.sel{outline:2px dashed var(--h);outline-offset:4px}
 .obj .x{position:absolute;top:-12px;right:-12px;width:24px;height:24px;border-radius:50%;background:var(--rose);color:var(--h);border:1px solid var(--h);font-size:13px;display:none;align-items:center;justify-content:center;cursor:pointer;z-index:5}
 .obj.sel .x{display:flex}
 .obj .ph{border-radius:8px;background:#E4DDCF;background-size:cover;background-position:center}
 .obj.txt{font-family:'Cormorant Garamond',serif;color:var(--h);font-size:22px;white-space:nowrap;padding:2px 5px;line-height:1.05}
 .obj.stk{font-size:34px;line-height:1}
-
-/* contextual toolbar for selected object */
-.ctx{position:absolute;left:60px;right:10px;bottom:8px;z-index:8;display:none;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:7px;gap:5px;align-items:center;box-shadow:0 8px 24px rgba(0,0,0,.18)}
-.ctx.on{display:flex}
-.ctx button,.ctx .tg{min-width:34px;height:34px;border-radius:9px;border:1px solid var(--line);background:var(--win);color:var(--text);font-size:15px;cursor:pointer;padding:0 8px;font-family:'Inter'}
-.ctx .lbl{font-size:9px;opacity:.5;padding:0 4px;text-transform:uppercase;letter-spacing:.08em}
-.ctx .grp{display:flex;gap:3px;align-items:center}
-.ctx .tg.act{background:var(--olive);color:#FAF9F6;border-color:var(--olive)}
-[data-theme="dark"] .ctx .tg.act{background:var(--h);color:#2B2926}
-.ctx .sp{flex:1}
 
 footer.bottom{position:relative;z-index:5;flex:none;background:var(--paper);border-top:1px solid var(--line);padding:8px 12px calc(8px + env(safe-area-inset-bottom));display:flex;gap:8px;align-items:center}
 .fbtn{border:1px solid var(--line);background:var(--win);color:var(--text);border-radius:11px;padding:9px 13px;font:500 12px 'Inter';cursor:pointer}
@@ -155,17 +152,16 @@ footer.bottom{position:relative;z-index:5;flex:none;background:var(--paper);bord
     <div class="stage">
       <div class="canvas" id="canvas">
         <div class="hint" id="chint"><span>🪞</span>чистый лист<br>работаешь с собой</div>
-      </div>
-      <!-- contextual toolbar -->
-      <div class="ctx" id="ctx">
-        <span class="lbl">слой</span>
-        <div class="grp"><button id="lyr-up">↑</button><button id="lyr-dn">↓</button></div>
-        <span class="sp"></span>
-        <span class="lbl" id="fmt-lbl" style="display:none">текст</span>
-        <div class="grp" id="fmt" style="display:none">
-          <button class="tg" data-f="bold"><b>Ж</b></button>
-          <button class="tg" data-f="italic"><i>К</i></button>
-          <button class="tg" data-f="underline"><span style="text-decoration:underline">Ч</span></button>
+        <div class="wbmark" id="wbmark">by @sea.laptev_</div>
+        <!-- contextual toolbar (floats by selected object) -->
+        <div class="ctx" id="ctx">
+          <div class="grp"><button id="lyr-up" title="слой вверх">↑</button><button id="lyr-dn" title="слой вниз">↓</button></div>
+          <div class="grp" id="fmt">
+            <button class="tg" data-f="bold"><b>Ж</b></button>
+            <button class="tg" data-f="italic"><i>К</i></button>
+            <button class="tg" data-f="underline"><span style="text-decoration:underline">Ч</span></button>
+          </div>
+          <button id="inmark-go" title="смотреть в inmark">🛍 inmark</button>
         </div>
       </div>
     </div>
@@ -383,8 +379,18 @@ function showCtx(el){
   ctx.classList.add('on');
   const isTxt=el.classList.contains('txt');
   document.getElementById('fmt').style.display=isTxt?'flex':'none';
-  document.getElementById('fmt-lbl').style.display=isTxt?'inline':'none';
   document.querySelectorAll('#fmt .tg').forEach(b=>{b.classList.toggle('act',el.classList.contains('t-'+b.dataset.f));});
+  placeCtx(el);
+}
+function placeCtx(el){
+  const c=cr(),er=rect(el);
+  const x=er.left-c.left,y=er.top-c.top;
+  let top=y-46;
+  if(top<6)top=y+er.height+8;
+  const cw=ctx.offsetWidth||180;
+  let left=x+er.width/2-cw/2;
+  left=Math.max(6,Math.min(c.width-cw-6,left));
+  ctx.style.top=top+'px';ctx.style.left=left+'px';
 }
 function bindObj(el){
   el.addEventListener('pointerdown',onObjDown);
@@ -418,7 +424,7 @@ function onObjDown(e){
   if(e.target.classList.contains('x'))return;
   const el=e.currentTarget;select(el);
   pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
-  canvas.setPointerCapture(e.pointerId);
+  el.setPointerCapture(e.pointerId);
   if(pointers.size===1){dragState={id:e.pointerId,dx:e.clientX-rect(el).left,dy:e.clientY-rect(el).top,s:parseFloat(el.dataset.scale),r:parseFloat(el.dataset.rot)};}
   else if(pointers.size===2){dragState=null;startPinch();}
   el.addEventListener('pointermove',onObjMove);
@@ -443,6 +449,7 @@ function onObjUp(e){
   if(pointers.size<2){pinchState=null;}
   if(pointers.size===0){dragState=null;el.removeEventListener('pointermove',onObjMove);el.removeEventListener('pointerup',onObjUp);el.removeEventListener('pointercancel',onObjUp);}
   else if(pointers.size===1){const[id]=pointers.keys();const p=pointers.get(id);dragState={id,dx:p.x-rect(el).left,dy:p.y-rect(el).top,s:parseFloat(el.dataset.scale),r:parseFloat(el.dataset.rot)};}
+  if(sel)placeCtx(sel);
 }
 function startPinch(){
   const[pts]=[...pointers.values()];if(pts.length<2)return;
@@ -471,6 +478,10 @@ document.querySelectorAll('#fmt .tg').forEach(b=>b.addEventListener('click',()=>
   if(f==='underline')sel.style.textDecoration=sel.classList.contains('t-underline')?'underline':'none';
 }));
 
+/* → inmark: переброс в интернет-магазин */
+const INMARK_URL='https://inmark.ru'; // ← подставить реальный адрес магазина
+document.getElementById('inmark-go').addEventListener('click',()=>{window.open(INMARK_URL,'_blank');});
+
 /* tools */
 document.querySelectorAll('.tools button').forEach(b=>b.addEventListener('click',()=>{
   const t=b.dataset.tool;
@@ -495,8 +506,6 @@ function exportPNG(){
   // minimal: draw background + note. Full per-object render is server-side task.
   const c=document.createElement('canvas');c.width=cw*2;c.height=ch*2;const g=c.getContext('2d');
   g.scale(2,2);g.fillStyle='#FBF8F2';g.fillRect(0,0,cw,ch);
-  g.fillStyle='#6E7A4B';g.font="italic 15px 'Cormorant Garamond',serif";g.textAlign='center';
-  g.fillText('WardBoard · by @sea.laptev_',cw/2,ch-16);
   // draw simple representations of objects
   canvas.querySelectorAll('.obj').forEach(o=>{
     const r=o.getBoundingClientRect(),cr2=canvas.getBoundingClientRect();
@@ -505,6 +514,9 @@ function exportPNG(){
     if(ph){const bg=getComputedStyle(ph).backgroundColor;g.fillStyle=bg;roundRect(g,x,y,w,h,8);g.fill();}
     else{g.fillStyle='#6E7A4B';g.font='20px serif';g.textAlign='left';g.fillText(o.textContent.replace('×',''),x,y+20);}
   });
+  // watermark on top, never overlapped
+  g.fillStyle='rgba(110,122,75,.6)';g.font="italic 15px 'Cormorant Garamond',serif";g.textAlign='center';
+  g.fillText('by @sea.laptev_',cw/2,ch-14);
   const url=c.toDataURL('image/png');
   const a=document.createElement('a');a.href=url;a.download='wardboard.png';a.click();
 }
