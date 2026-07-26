@@ -52,7 +52,7 @@ header.top{position:relative;z-index:6;flex:none;background:var(--head);padding:
 .inkpkg small{font-size:7px;margin-top:1px;font-weight:400}
 .wbmark{position:absolute;bottom:8px;left:0;right:0;text-align:center;font:italic 13px 'Cormorant Garamond',serif;color:var(--h);opacity:.5;pointer-events:none;z-index:9999}
 .obj.sel{outline:2px dashed var(--h);outline-offset:4px}
-.obj .x{position:absolute;top:-12px;right:-12px;width:24px;height:24px;border-radius:50%;background:var(--rose);color:var(--h);border:1px solid var(--h);font-size:13px;display:none;align-items:center;justify-content:center;cursor:pointer;z-index:9500}
+.obj .x{position:absolute;top:3px;right:3px;width:24px;height:24px;border-radius:50%;background:var(--rose);color:var(--h);border:1px solid var(--h);font-size:13px;display:none;align-items:center;justify-content:center;cursor:pointer;z-index:9500}
 .obj.sel .x{display:flex}
 .obj .ph{border-radius:8px;background:#E4DDCF;background-size:cover;background-position:center}
 .obj.txt{font-family:'Cormorant Garamond',serif;color:var(--h);font-size:22px;white-space:nowrap;padding:2px 5px;line-height:1.05}
@@ -414,14 +414,18 @@ function placeCtx(el){
 function bindObj(el){
   el.addEventListener('pointerdown',onObjDown);
   el.addEventListener('dblclick',e=>{
-    if(!el.classList.contains('txt')||el.classList.contains('formula'))return;
-    e.stopPropagation();
-    const span=el.querySelector('.tc')||el;
-    const cur=span.textContent||'';
-    const nv=prompt('Текст:',cur);
-    if(nv!==null){pushHist();span.textContent=nv||' ';}
+    if(!el.classList.contains('txt')||el.classList.contains('formula')||el.isContentEditable)return;
+    e.stopPropagation();startEdit(el);
   });
+  el.addEventListener('blur',()=>{if(el.isContentEditable){el.contentEditable='false';}});
   const x=el.querySelector('.x');if(x)x.addEventListener('click',e=>{e.stopPropagation();pushHist();el.remove();deselect();updateHint();});
+}
+function startEdit(el){
+  el.contentEditable='true';el.focus();
+  const sp=el.querySelector('.tc');const node=sp||el;
+  const r=document.createRange();r.selectNodeContents(node);
+  const s=window.getSelection();s.removeAllRanges();r.selectNodeContents(node);s.addRange(r);
+  ctx.classList.remove('on');
 }
 
 function makeObj(o){
@@ -447,8 +451,9 @@ const pointers=new Map();
 let dragState=null,pinchState=null;
 function tf(el,s,r){el.style.transform='rotate('+r+'deg) scale('+s+')';}
 function onObjDown(e){
-  e.stopPropagation();e.preventDefault();
   if(e.target.classList.contains('x'))return;
+  if(e.currentTarget.isContentEditable)return;
+  e.stopPropagation();e.preventDefault();
   const el=e.currentTarget;select(el);
   pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
   el.setPointerCapture(e.pointerId);
