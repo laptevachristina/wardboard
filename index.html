@@ -52,6 +52,20 @@ header.top{position:relative;z-index:5;flex:none;background:var(--head);padding:
 .tools .sep{width:26px;height:1px;background:var(--line);margin:3px 0}
 
 .stage{flex:1;display:flex;align-items:center;justify-content:center;padding:12px;overflow:hidden;position:relative}
+.tpanel{display:none;position:absolute;left:8px;right:8px;bottom:8px;z-index:20;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:10px;box-shadow:0 -8px 30px rgba(0,0,0,.18)}
+.tpanel.on{display:block}
+.tpanel select,.tpanel input[type=text]{width:100%;border:1px solid var(--line);background:var(--win);color:var(--text);border-radius:9px;padding:8px 10px;font:400 13px 'Inter'}
+.trow{margin-bottom:8px}
+.tpal{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.tpal .dot{width:26px;height:26px;border-radius:50%;border:2px solid var(--paper);box-shadow:0 0 0 1px var(--line);cursor:pointer;padding:0}
+.tpal .dot.act{box-shadow:0 0 0 2px var(--h)}
+.tpal .pick{width:26px;height:26px;border-radius:50%;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;border:2px dashed var(--h);font-size:12px}
+.tpal .pick input{position:absolute;inset:-4px;opacity:0;cursor:pointer;width:34px;height:34px}
+.trow.btns{display:flex;gap:8px;margin-bottom:0}
+.trow.btns button{flex:1;border:0;border-radius:9px;padding:9px;font:500 13px 'Inter';cursor:pointer}
+#t-add{background:var(--olive);color:#FAF9F6}
+[data-theme="dark"] #t-add{background:var(--h);color:#2B2926}
+#t-close{background:var(--win);color:var(--text);border:1px solid var(--line)}
 .canvas{position:relative;height:100%;aspect-ratio:9/16;background:#FBF8F2;border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.10);overflow:hidden}
 [data-theme="dark"] .canvas{background:#322F2A}
 .canvas>.hint{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--h);opacity:.45;text-align:center;padding:20px;font-family:'Cormorant Garamond',serif;font-size:16px;pointer-events:none}
@@ -138,8 +152,6 @@ footer.bottom{position:relative;z-index:5;flex:none;background:var(--paper);bord
       <button data-tool="text">🅰<small>текст</small></button>
       <button data-tool="sticker">✨<small>стикер</small></button>
       <div class="sep"></div>
-      <button data-tool="me">🧍<small>я</small></button>
-      <div class="sep"></div>
       <button data-tool="undo">↶<small>назад</small></button>
       <button data-tool="redo">↷<small>вперёд</small></button>
       <div class="sep"></div>
@@ -148,7 +160,30 @@ footer.bottom{position:relative;z-index:5;flex:none;background:var(--paper);bord
 
     <div class="stage">
       <div class="canvas" id="canvas">
-        <div class="hint" id="chint"><span>🪞</span>чистый лист<br>работаешь с собой</div>
+        <div class="hint" id="chint"><span>👇</span>открой «Шкаф» и тапни вещь —<br>она появится тут. двигай пальцем,<br>двумя — крути и меняй размер</div>
+      </div>
+      <div class="tpanel" id="tpanel">
+        <div class="trow"><select id="t-type">
+          <option value="h">Заголовок — Cormorant</option>
+          <option value="s">Подзаголовок — курсив</option>
+          <option value="b">Текст — Inter</option>
+          <option value="p">Курсив-лого — Pinyon</option>
+        </select></div>
+        <div class="trow"><input type="text" id="t-text" value="текст" placeholder="введи текст"></div>
+        <div class="trow tpal" id="tpal">
+          <button class="dot act" data-c="#6E7A4B" style="background:#6E7A4B"></button>
+          <button class="dot" data-c="#312F2C" style="background:#312F2C"></button>
+          <button class="dot" data-c="#C98A93" style="background:#C98A93"></button>
+          <button class="dot" data-c="#7B3F61" style="background:#7B3F61"></button>
+          <button class="dot" data-c="#8B7355" style="background:#8B7355"></button>
+          <button class="dot" data-c="#2F4F4F" style="background:#2F4F4F"></button>
+          <button class="dot" data-c="#FFFFFF" style="background:#FFFFFF"></button>
+          <label class="pick">💧<input type="color" id="t-pick" value="#6E7A4B"></label>
+        </div>
+        <div class="trow btns">
+          <button id="t-add">＋ добавить</button>
+          <button id="t-close">отмена</button>
+        </div>
       </div>
     </div>
 
@@ -275,9 +310,9 @@ function addToCanvas(o){
   clearHint();
   const n=mkObjNode();
   if(o.type==='photo'){const im=document.createElement('div');im.style.width='74px';im.style.height='98px';im.className='ph '+o.cls;n.appendChild(im);}
-  else if(o.type==='text'){n.classList.add('txt');n.appendChild(document.createTextNode('текст'));}
-  else if(o.type==='sticker'){n.classList.add('stk');n.textContent='✨';}
-  else if(o.type==='me'){n.classList.add('stk');n.textContent='🧍';}
+  else if(o.type==='text'){n.classList.add('txt');n.style.fontFamily=o.font;n.style.fontSize=o.size+'px';n.style.fontStyle=o.italic?'italic':'normal';n.style.fontWeight=o.weight||'400';n.style.color=o.color||'var(--h)';n.appendChild(document.createTextNode(o.txt||'текст'));}
+  else if(o.type==='sticker'){n.classList.add('stk');n.appendChild(document.createTextNode('✨'));}
+  else if(o.type==='me'){n.classList.add('stk');n.appendChild(document.createTextNode('🧍'));}
   n.style.left=(40+Math.random()*40)+'px';n.style.top=(40+Math.random()*50)+'px';n.style.zIndex=++z;
   bindObj(n);canvas.appendChild(n);select(n);snapshot();
 }
@@ -323,15 +358,27 @@ function restore(){
 document.querySelectorAll('.tools button').forEach(b=>b.addEventListener('click',()=>{
   const t=b.dataset.tool;
   if(t==='photo')addToCanvas({type:'photo',cls:'sw1'});
-  else if(t==='text')addToCanvas({type:'text'});
+  else if(t==='text'){document.getElementById('tpanel').classList.add('on');}
   else if(t==='sticker')addToCanvas({type:'sticker'});
-  else if(t==='me')addToCanvas({type:'me'});
   else if(t==='undo'){if(hi>0){hi--;restore();}}
   else if(t==='redo'){if(hi<hist.length-1){hi++;restore();}}
   else if(t==='download'){alert('Сохранить образ — скоро тут');}
 }));
 
 const th=document.getElementById('th');const root=document.documentElement;
+/* текст-панель: стиль задает пользователь */
+const STYLES={h:{f:"'Cormorant Garamond',serif",s:28,i:false,w:600},s:{f:"'Cormorant Garamond',serif",s:20,i:true,w:500},b:{f:"'Inter',sans-serif",s:15,i:false,w:300},p:{f:"'Pinyon Script',cursive",s:32,i:false,w:400}};
+let tColor='#6E7A4B';
+const tpal=document.getElementById('tpal');
+tpal.querySelectorAll('.dot').forEach(d=>d.addEventListener('click',()=>{tpal.querySelectorAll('.dot').forEach(x=>x.classList.remove('act'));d.classList.add('act');tColor=d.dataset.c;}));
+document.getElementById('t-pick').addEventListener('input',e=>{tColor=e.target.value;tpal.querySelectorAll('.dot').forEach(x=>x.classList.remove('act'));});
+document.getElementById('t-close').addEventListener('click',()=>document.getElementById('tpanel').classList.remove('on'));
+document.getElementById('t-add').addEventListener('click',()=>{
+  const k=document.getElementById('t-type').value;const st=STYLES[k];
+  const txt=document.getElementById('t-text').value||'текст';
+  addToCanvas({type:'text',font:st.f,size:st.s,italic:st.i,weight:st.w,color:tColor,txt:txt});
+  document.getElementById('tpanel').classList.remove('on');
+});
 const saved=localStorage.getItem('wb-theme');if(saved){root.dataset.theme=saved;th.textContent=saved==='dark'?'☀':'🌙';}
 th.addEventListener('click',()=>{const d=root.dataset.theme==='dark'?'light':'dark';root.dataset.theme=d;localStorage.setItem('wb-theme',d);th.textContent=d==='dark'?'☀':'🌙';document.querySelector('meta[name=theme-color]').setAttribute('content',d==='dark'?'#2B2926':'#F4E3E6');});
 
