@@ -63,6 +63,9 @@ header.top{position:relative;z-index:5;flex:none;background:var(--head);padding:
 .tpal .pick input{position:absolute;inset:-4px;opacity:0;cursor:pointer;width:34px;height:34px}
 .tpal .add-fav{border:2px dashed var(--h);background:transparent;color:var(--h);font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center}
 .tpal-hint{font-size:10px;opacity:.55;margin-top:6px;text-align:center}
+.ttoggle{border:1px solid var(--line);background:var(--win);color:var(--text);border-radius:9px;padding:8px 12px;font:500 12px 'Inter';cursor:pointer}
+.ttoggle.act{background:var(--olive);color:#FAF9F6;border-color:var(--olive)}
+[data-theme="dark"] .ttoggle.act{background:var(--h);color:#2B2926;border-color:var(--h)}
 .trow.btns{display:flex;gap:8px;margin-bottom:0}
 .trow.btns button{flex:1;border:0;border-radius:9px;padding:9px;font:500 13px 'Inter';cursor:pointer}
 #t-add{background:var(--olive);color:#FAF9F6}
@@ -157,6 +160,9 @@ footer.bottom{position:relative;z-index:5;flex:none;background:var(--paper);bord
       <button data-tool="undo">↶<small>назад</small></button>
       <button data-tool="redo">↷<small>вперёд</small></button>
       <div class="sep"></div>
+      <button data-tool="up">⬆<small>слой ↑</small></button>
+      <button data-tool="down">⬇<small>слой ↓</small></button>
+      <div class="sep"></div>
       <button class="dl" data-tool="download">⬇<small>скачать</small></button>
     </div>
 
@@ -175,6 +181,7 @@ footer.bottom{position:relative;z-index:5;flex:none;background:var(--paper);bord
         <div class="trow tpal" id="tpal"></div>
         <div class="tpal-hint">тап — выбрать · ＋ — добавить в любимые · удержание — удалить</div>
         <div class="trow btns">
+          <button type="button" id="t-under" class="ttoggle" style="flex:0 0 auto">U̲ подчёркнуть</button>
           <button id="t-add">＋ добавить</button>
           <button id="t-close">отмена</button>
         </div>
@@ -304,7 +311,7 @@ function addToCanvas(o){
   clearHint();
   const n=mkObjNode();
   if(o.type==='photo'){const im=document.createElement('div');im.style.width='74px';im.style.height='98px';im.className='ph '+o.cls;n.appendChild(im);}
-  else if(o.type==='text'){n.classList.add('txt');n.style.fontFamily=o.font;n.style.fontSize=o.size+'px';n.style.fontStyle=o.italic?'italic':'normal';n.style.fontWeight=o.weight||'400';n.style.color=o.color||'var(--h)';n.appendChild(document.createTextNode(o.txt||'текст'));}
+  else if(o.type==='text'){n.classList.add('txt');n.style.fontFamily=o.font;n.style.fontSize=o.size+'px';n.style.fontStyle=o.italic?'italic':'normal';n.style.fontWeight=o.weight||'400';n.style.color=o.color||'var(--h)';n.style.textDecoration=o.underline?'underline':'none';n.appendChild(document.createTextNode(o.txt||'текст'));}
   else if(o.type==='sticker'){n.classList.add('stk');n.appendChild(document.createTextNode('✨'));}
   else if(o.type==='me'){n.classList.add('stk');n.appendChild(document.createTextNode('🧍'));}
   n.style.left=(40+Math.random()*40)+'px';n.style.top=(40+Math.random()*50)+'px';n.style.zIndex=++z;
@@ -356,6 +363,8 @@ document.querySelectorAll('.tools button').forEach(b=>b.addEventListener('click'
   else if(t==='sticker')addToCanvas({type:'sticker'});
   else if(t==='undo'){if(hi>0){hi--;restore();}}
   else if(t==='redo'){if(hi<hist.length-1){hi++;restore();}}
+  else if(t==='up'){if(sel){const zs=[...canvas.querySelectorAll('.obj')].map(o=>+o.style.zIndex||0);sel.style.zIndex=(Math.max(...zs)+1);}}
+  else if(t==='down'){if(sel){const zs=[...canvas.querySelectorAll('.obj')].map(o=>+o.style.zIndex||0);sel.style.zIndex=(Math.min(...zs)-1);}}
   else if(t==='download'){alert('Сохранить образ — скоро тут');}
 }));
 
@@ -363,6 +372,9 @@ const th=document.getElementById('th');const root=document.documentElement;
 /* текст-панель: стиль задает пользователь */
 const STYLES={h:{f:"'Cormorant Garamond',serif",s:28,i:false,w:600},s:{f:"'Cormorant Garamond',serif",s:20,i:true,w:500},b:{f:"'Inter',sans-serif",s:15,i:false,w:300},p:{f:"'Pinyon Script',cursive",s:32,i:false,w:400}};
 let tColor='#6E7A4B';
+let tUnder=false;
+const tUnderBtn=document.getElementById('t-under');
+tUnderBtn.addEventListener('click',()=>{tUnder=!tUnder;tUnderBtn.classList.toggle('act',tUnder);});
 let fav=JSON.parse(localStorage.getItem('wb-pal')||'null')||['#6E7A4B','#312F2C','#C98A93','#7B3F61','#8B7355','#2F4F4F'];
 function saveFav(){localStorage.setItem('wb-pal',JSON.stringify(fav));}
 function markAct(){document.querySelectorAll('#tpal .dot:not(.add-fav)').forEach(d=>d.classList.toggle('act',d.dataset.c===tColor));}
@@ -387,7 +399,7 @@ document.getElementById('t-close').addEventListener('click',()=>document.getElem
 document.getElementById('t-add').addEventListener('click',()=>{
   const k=document.getElementById('t-type').value;const st=STYLES[k];
   const txt=document.getElementById('t-text').value||'текст';
-  addToCanvas({type:'text',font:st.f,size:st.s,italic:st.i,weight:st.w,color:tColor,txt:txt});
+  addToCanvas({type:'text',font:st.f,size:st.s,italic:st.i,weight:st.w,color:tColor,txt:txt,underline:tUnder});
   document.getElementById('tpanel').classList.remove('on');
 });
 renderPal();
