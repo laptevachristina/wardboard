@@ -70,7 +70,7 @@ footer.bottom{position:relative;z-index:5;flex:none;background:var(--paper);bord
 @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1}}
 
 /* drawer (картотека) */
-.drawer{position:absolute;z-index:30;top:0;right:0;bottom:0;width:86%;max-width:340px;background:var(--paper);border-left:1px solid var(--line);box-shadow:-14px 0 40px rgba(0,0,0,.18);transform:translateX(100%);transition:transform .28s;display:flex;flex-direction:column}
+.drawer{position:absolute;z-index:30;top:0;right:0;bottom:0;width:86%;max-width:340px;background:var(--paper);border-left:1px solid var(--line);box-shadow:-14px 0 40px rgba(0,0,0,.18);transform:translateX(100%);transition:transform .28s;display:flex;flex-direction:column;touch-action:pan-y}
 .drawer.on{transform:translateX(0)}
 .drawer .dh-head{padding:13px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line)}
 .drawer .dh{font-family:'Cormorant Garamond',serif;color:var(--h);font-size:22px;line-height:1}
@@ -346,7 +346,24 @@ function renderPal(){
   });
 }
 tabBtns.forEach(b=>b.addEventListener('click',()=>openSection(b.dataset.sec)));
-document.getElementById('d-close').addEventListener('click',()=>{drawer.classList.remove('on');tabBtns.forEach(b=>b.classList.remove('on'));});
+document.getElementById('d-close').addEventListener('click',closeDrawer);
+function closeDrawer(){drawer.classList.remove('on');tabBtns.forEach(b=>b.classList.remove('on'));drawer.style.transform='';}
+/* swipe-to-close drawer (большой палец → вправо) */
+let dStart=null,dDX=0,dDrag=false;
+drawer.addEventListener('pointerdown',e=>{dStart={x:e.clientX,y:e.clientY};dDX=0;dDrag=false;});
+drawer.addEventListener('pointermove',e=>{
+  if(!dStart)return;
+  const dx=e.clientX-dStart.x,dy=e.clientY-dStart.y;
+  if(!dDrag){
+    if(Math.abs(dx)>12&&Math.abs(dx)>Math.abs(dy)){dDrag=true;drawer.style.transition='none';}
+    else if(Math.abs(dy)>12){dStart=null;}
+  }
+  if(dDrag){dDX=Math.max(0,dx);drawer.style.transform='translateX('+dDX+'px)';}
+});
+function dEnd(){if(!dDrag){dStart=null;return;}const w=drawer.offsetWidth;drawer.style.transition='';if(dDX>w*0.32){closeDrawer();}else{drawer.style.transform='';}dDrag=false;dStart=null;dDX=0;}
+drawer.addEventListener('pointerup',dEnd);
+drawer.addEventListener('pointercancel',dEnd);
+drawer.addEventListener('pointerleave',e=>{if(dDrag)dEnd();});
 
 /* ============ CANVAS + objects ============ */
 const canvas=document.getElementById('canvas'),chint=document.getElementById('chint'),ctx=document.getElementById('ctx');
