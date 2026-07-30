@@ -378,6 +378,18 @@ const FIGURY=[
   pair:'удлинённый кардиган + прямые брюки; акцент на обувь'}
 ];
 
+/* ============ ТРЕНДЫ СЕЗОНА (обновляем сами) ============ */
+const TRENDS=[
+ {name:'Брюки-баллоны',svg:'balloon',desc:'Объём в бёдрах и лодыжках, мягкая сборка.',how:'с облегающим верхом — баланс объёмов',pair:'кроп-топ или облегающая футболка + балетки'},
+ {name:'Бермуды',svg:'bermuda',desc:'Длинные шорты до колена — деним или классика.',how:'заправленная рубашка или майка + лоферы',pair:'рубашка + лоферы; жакет + белая майка'},
+ {name:'Платье 20-х (shift)',svg:'shift',desc:'Прямое, ниже колена, бисер и прямые линии.',how:'Т-ремешки-сандалии + платок-бандана',pair:'босоножки + тонкий платок на волосы'},
+ {name:'Пеплум / баска',svg:'peplum',desc:'Приталенный верх, расклёшённый подол-баска.',how:'с гладкими брюками или юбкой-карандаш',pair:'прямые брюки + каблук'},
+ {name:'Шорты с кружевом',svg:'laceshort',desc:'Короткие шорты с кружевной отделкой.',how:'приглушить строгим верхом — жакет, футболка',pair:'пиджак + белая футболка'},
+ {name:'Асимметричная юбка',svg:'asym',desc:'Один запах или скошенный подол.',how:'простая заправленная блуза, минимум деталей',pair:'однотонная блуза + сандалии'},
+ {name:'Кружево и вязка',svg:'crochet',desc:'Текстурный топ, косынка, кроп-кофточка.',how:'поверх гладких базовых вещей',pair:'базовая майка + лён'},
+ {name:'Нейтрали и лён',svg:'linen',desc:'Белое/беж монохром, льняные комплекты.',how:'монохром — один тон сверху донизу',pair:'льняная рубашка + брюки в тон'}
+];
+
 /* ---- SVG generators ---- */
 function silhouetteSVG(p){
  const cx=40,headY=12,headR=8,shY=26,taY=58,hiY=78;
@@ -403,6 +415,18 @@ function colorWheelSVG(cols){
   const x0i=cx+r*Math.cos(a0),y0i=cy+r*Math.sin(a0),x1i=cx+r*Math.cos(a1),y1i=cy+r*Math.sin(a1);
   p+=`<path d="M${x0o.toFixed(1)} ${y0o.toFixed(1)} A${R} ${R} 0 0 1 ${x1o.toFixed(1)} ${y1o.toFixed(1)} L${x1i.toFixed(1)} ${y1i.toFixed(1)} A${r} ${r} 0 0 0 ${x0i.toFixed(1)} ${y0i.toFixed(1)} Z" fill="${cols[i]}"/>`;}
  return `<svg viewBox="0 0 48 48" width="46" height="46">${p}</svg>`;
+}
+function garmentSVG(t){
+ const S={balloon:'<path d="M20 6 L40 6 L41 26 Q50 44 39 60 L37 76 L33 76 L30 42 L27 76 L23 76 L21 60 Q10 44 19 26 Z"/>',
+  bermuda:'<path d="M18 6 L42 6 L43 16 L47 50 L33 50 L31 24 L29 24 L27 50 L13 50 L17 16 Z"/>',
+  shift:'<path d="M22 6 L38 6 L41 12 L47 84 L13 84 L19 12 Z"/><line x1="16" y1="30" x2="44" y2="30"/><line x1="17" y1="44" x2="43" y2="44"/><line x1="15" y1="58" x2="45" y2="58"/><line x1="14" y1="72" x2="46" y2="72"/>',
+  peplum:'<path d="M22 6 L38 6 L38 30 L50 56 L10 56 L22 30 Z"/>',
+  laceshort:'<path d="M18 6 L42 6 L44 20 L44 38 L40 38 L36 30 L33 38 L27 38 L24 30 L20 38 L16 38 L16 20 Z"/>',
+  asym:'<path d="M24 6 L36 6 L44 70 L14 58 Z"/>',
+  crochet:'<rect x="18" y="10" width="24" height="34" rx="4"/><circle cx="24" cy="20" r="2"/><circle cx="32" cy="20" r="2"/><circle cx="36" cy="28" r="2"/><circle cx="24" cy="32" r="2"/><circle cx="32" cy="36" r="2"/>',
+  linen:'<path d="M22 6 L38 6 L40 14 L44 46 L38 46 L36 18 L34 46 L26 46 L24 18 L22 46 L16 46 L20 14 Z"/><path d="M20 50 L40 50 L42 56 L42 84 L34 84 L32 58 L28 58 L26 84 L18 84 L18 56 Z"/>'};
+ const v={balloon:'0 0 60 84',bermuda:'0 0 60 56',shift:'0 0 60 90',peplum:'0 0 60 62',laceshort:'0 0 60 44',asym:'0 0 60 76',crochet:'0 0 60 50',linen:'0 0 60 90'}[t];
+ return `<svg viewBox="${v}" width="46" height="60" fill="none" stroke="var(--h)" stroke-width="1.8" stroke-linejoin="round">${S[t]}</svg>`;
 }
 
 /* ============ QUOTE (auto popup, no button) ============ */
@@ -503,6 +527,20 @@ function openSection(key){
       head.addEventListener('click',()=>{const on=body.classList.toggle('on');head.querySelector('.csec-a').textContent=on?'▴':'▾';head.classList.toggle('on',on);});
       wrap.appendChild(head);wrap.appendChild(body);dBody.appendChild(wrap);
     }
+
+    /* ---- Тренды сезона ---- */
+    csec('Тренды сезона · ☀ Лето 2026','обновляем сами',body=>{
+      TRENDS.forEach(t=>{
+        const c=document.createElement('div');c.className='tip';
+        c.innerHTML=`<div class="tip-top"><div class="tip-svg">${garmentSVG(t.svg)}</div><div><div class="tip-name">${t.name}</div><div class="tip-tag">${t.desc}</div></div><div class="tip-arrow">▾</div></div>
+          <div class="tip-det">
+            <p class="good"><b>Как носить:</b> ${t.how}.</p>
+            <p><b>Сочетать:</b> ${t.pair}.</p>
+          </div>`;
+        c.querySelector('.tip-top').addEventListener('click',()=>{const on=c.querySelector('.tip-det').classList.toggle('on');c.querySelector('.tip-arrow').textContent=on?'▴':'▾';});
+        body.appendChild(c);
+      });
+    });
 
     /* ---- Типажи внешности ---- */
     csec('Типажи внешности','система Кибби',body=>{
