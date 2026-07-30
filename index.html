@@ -96,6 +96,14 @@ footer.bottom{position:relative;z-index:5;flex:none;background:var(--paper);bord
 .drawer-filter{padding:8px 12px;border-bottom:1px solid var(--line);display:flex;gap:6px}
 .lc{background:var(--win);border-radius:13px;padding:13px;margin-bottom:9px}
 .sec-head{margin-top:14px;border-top:1px dashed var(--line);padding-top:14px}
+.csec{margin-bottom:9px}
+.csec-head{display:flex;align-items:center;gap:8px;background:var(--olive);color:#FAF9F6;border-radius:13px;padding:14px 15px;cursor:pointer}
+[data-theme="dark"] .csec-head{background:var(--h);color:#2B2926}
+.csec-head .csec-t{font:600 18px 'Cormorant Garamond'}
+.csec-head .csec-s{font-size:11px;opacity:.75;margin-left:auto;margin-right:8px}
+.csec-head .csec-a{font-size:13px;opacity:.8}
+.csec-body{display:none;padding-top:9px}
+.csec-body.on{display:block}
 .tip{background:var(--win);border-radius:13px;padding:13px;margin-bottom:9px}
 .tip-top{display:flex;align-items:center;gap:11px;cursor:pointer}
 .tip-svg{flex:none;display:flex;align-items:center}
@@ -485,51 +493,64 @@ function openSection(key){
     document.getElementById('pal-add').addEventListener('click',()=>document.getElementById('picker').classList.toggle('on'));
     document.getElementById('pick-ok').addEventListener('click',()=>{const c=document.getElementById('pick').value;const a=loadPal();if(!a.includes(c)){a.push(c);savePal(a);}document.getElementById('picker').classList.remove('on');renderPal();});
 
+    /* ---- collapsible section helper ---- */
+    function csec(title,sub,fn){
+      const wrap=document.createElement('div');wrap.className='csec';
+      const head=document.createElement('div');head.className='csec-head';
+      head.innerHTML=`<span class="csec-t">${title}</span><span class="csec-s">${sub}</span><span class="csec-a">▾</span>`;
+      const body=document.createElement('div');body.className='csec-body';
+      fn(body);
+      head.addEventListener('click',()=>{const on=body.classList.toggle('on');head.querySelector('.csec-a').textContent=on?'▴':'▾';head.classList.toggle('on',on);});
+      wrap.appendChild(head);wrap.appendChild(body);dBody.appendChild(wrap);
+    }
+
     /* ---- Типажи внешности ---- */
-    const th=document.createElement('div');th.className='lc sec-head';th.innerHTML='<h3>Типажи внешности</h3><p>система Кибби · силуэт, черты, что идёт</p>';dBody.appendChild(th);
-    TIPAZH.forEach(t=>{
-      const c=document.createElement('div');c.className='tip';
-      c.innerHTML=`<div class="tip-top"><div class="tip-svg">${silhouetteSVG(t.body)}</div><div><div class="tip-name">${t.name}</div><div class="tip-tag">${t.tag}</div></div><div class="tip-arrow">▾</div></div>
-        <div class="tip-det">
-          <div class="tip-row"><div class="tip-face">${faceSVG(t.face)}</div><div class="tip-fn"><b>Черты лица:</b> ${t.faceNote.join(' · ')}</div></div>
-          <p><b>Пропорции:</b> ${t.props}</p>
-          <p class="good"><b>Идёт:</b> ${t.good.join(', ')}.</p>
-          <p class="bad"><b>Не идёт:</b> ${t.bad.join(', ')}.</p>
-          <p><b>Примеры:</b> ${t.ex}.</p>
-        </div>`;
-      c.querySelector('.tip-top').addEventListener('click',()=>{const d=c.querySelector('.tip-det');const on=d.classList.toggle('on');c.querySelector('.tip-arrow').textContent=on?'▴':'▾';});
-      dBody.appendChild(c);
+    csec('Типажи внешности','система Кибби',body=>{
+      TIPAZH.forEach(t=>{
+        const c=document.createElement('div');c.className='tip';
+        c.innerHTML=`<div class="tip-top"><div class="tip-svg">${silhouetteSVG(t.body)}</div><div><div class="tip-name">${t.name}</div><div class="tip-tag">${t.tag}</div></div><div class="tip-arrow">▾</div></div>
+          <div class="tip-det">
+            <div class="tip-row"><div class="tip-face">${faceSVG(t.face)}</div><div class="tip-fn"><b>Черты лица:</b> ${t.faceNote.join(' · ')}</div></div>
+            <p><b>Пропорции:</b> ${t.props}</p>
+            <p class="good"><b>Идёт:</b> ${t.good.join(', ')}.</p>
+            <p class="bad"><b>Не идёт:</b> ${t.bad.join(', ')}.</p>
+            <p><b>Примеры:</b> ${t.ex}.</p>
+          </div>`;
+        c.querySelector('.tip-top').addEventListener('click',()=>{const on=c.querySelector('.tip-det').classList.toggle('on');c.querySelector('.tip-arrow').textContent=on?'▴':'▾';});
+        body.appendChild(c);
+      });
     });
 
     /* ---- Цветотипы ---- */
-    const ch=document.createElement('div');ch.className='lc sec-head';ch.innerHTML='<h3>Цветотипы</h3><p>12 подтипов · палитра и принты</p>';dBody.appendChild(ch);
-    TSVET.forEach(se=>{
-      const sc=document.createElement('div');sc.className='tip';
-      sc.innerHTML=`<div class="tip-top"><div class="tip-ic">${se.icon}</div><div><div class="tip-name">${se.seas}</div><div class="tip-tag">${se.mood}</div></div><div class="tip-arrow">▾</div></div>
-        <div class="tip-det"></div>`;
-      const det=sc.querySelector('.tip-det');
-      se.sub.forEach(s=>{const r=document.createElement('div');r.className='ct-row';
-        r.innerHTML=`<div class="ct-wheel">${colorWheelSVG(s.cols)}</div><div class="ct-info"><div class="ct-name">${s.n}</div>
-          <div class="ct-chips">${s.cols.map(c=>'<span style="background:'+c+'"></span>').join('')}</div>
-          <div class="ct-print"><b>Принты:</b> ${s.print}</div></div>`;
-        det.appendChild(r);});
-      sc.querySelector('.tip-top').addEventListener('click',()=>{const on=det.classList.toggle('on');sc.querySelector('.tip-arrow').textContent=on?'▴':'▾';});
-      dBody.appendChild(sc);
+    csec('Цветотипы','12 подтипов · палитра и принты',body=>{
+      TSVET.forEach(se=>{
+        const sc=document.createElement('div');sc.className='tip';
+        sc.innerHTML=`<div class="tip-top"><div class="tip-ic">${se.icon}</div><div><div class="tip-name">${se.seas}</div><div class="tip-tag">${se.mood}</div></div><div class="tip-arrow">▾</div></div><div class="tip-det"></div>`;
+        const det=sc.querySelector('.tip-det');
+        se.sub.forEach(s=>{const r=document.createElement('div');r.className='ct-row';
+          r.innerHTML=`<div class="ct-wheel">${colorWheelSVG(s.cols)}</div><div class="ct-info"><div class="ct-name">${s.n}</div>
+            <div class="ct-chips">${s.cols.map(c=>'<span style="background:'+c+'"></span>').join('')}</div>
+            <div class="ct-print"><b>Принты:</b> ${s.print}</div></div>`;
+          det.appendChild(r);});
+        sc.querySelector('.tip-top').addEventListener('click',()=>{const on=det.classList.toggle('on');sc.querySelector('.tip-arrow').textContent=on?'▴':'▾';});
+        body.appendChild(sc);
+      });
     });
 
     /* ---- Типы фигуры ---- */
-    const fh=document.createElement('div');fh.className='lc sec-head';fh.innerHTML='<h3>Типы фигуры</h3><p>силуэт · что носить · как сочетать</p>';dBody.appendChild(fh);
-    FIGURY.forEach(t=>{
-      const c=document.createElement('div');c.className='tip';
-      c.innerHTML=`<div class="tip-top"><div class="tip-svg">${silhouetteSVG(t.body)}</div><div><div class="tip-name">${t.name}</div><div class="tip-tag">${t.desc}</div></div><div class="tip-arrow">▾</div></div>
-        <div class="tip-det">
-          <p class="good"><b>Носить:</b> ${t.good.join(', ')}.</p>
-          <p class="bad"><b>Избегать:</b> ${t.bad.join(', ')}.</p>
-          <p><b>Пример:</b> ${t.ex}.</p>
-          <p><b>Сочетать:</b> ${t.pair}.</p>
-        </div>`;
-      c.querySelector('.tip-top').addEventListener('click',()=>{const on=c.querySelector('.tip-det').classList.toggle('on');c.querySelector('.tip-arrow').textContent=on?'▴':'▾';});
-      dBody.appendChild(c);
+    csec('Типы фигуры','силуэт · что носить · сочетать',body=>{
+      FIGURY.forEach(t=>{
+        const c=document.createElement('div');c.className='tip';
+        c.innerHTML=`<div class="tip-top"><div class="tip-svg">${silhouetteSVG(t.body)}</div><div><div class="tip-name">${t.name}</div><div class="tip-tag">${t.desc}</div></div><div class="tip-arrow">▾</div></div>
+          <div class="tip-det">
+            <p class="good"><b>Носить:</b> ${t.good.join(', ')}.</p>
+            <p class="bad"><b>Избегать:</b> ${t.bad.join(', ')}.</p>
+            <p><b>Пример:</b> ${t.ex}.</p>
+            <p><b>Сочетать:</b> ${t.pair}.</p>
+          </div>`;
+        c.querySelector('.tip-top').addEventListener('click',()=>{const on=c.querySelector('.tip-det').classList.toggle('on');c.querySelector('.tip-arrow').textContent=on?'▴':'▾';});
+        body.appendChild(c);
+      });
     });
   } else {
     s.items.forEach(it=>{const c=document.createElement('div');c.className='lc'+(it[2]?' wish':'');c.innerHTML='<h3>'+it[0]+'</h3><p>'+it[1]+'</p>';dBody.appendChild(c);});
