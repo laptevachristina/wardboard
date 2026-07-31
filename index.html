@@ -108,6 +108,12 @@ footer.bottom{position:relative;z-index:5;flex:none;background:var(--paper);bord
 .tip-top{display:flex;align-items:center;gap:11px;cursor:pointer}
 .tip-svg{flex:none;display:flex;align-items:center}
 .tip-photo{width:50px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+/* lightbox */
+.lb{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;background:rgba(18,18,18,.93)}
+.lb.on{display:flex}
+.lb-img{max-width:94vw;max-height:92vh;object-fit:contain;transform-origin:center center;touch-action:none;will-change:transform;transition:transform .15s}
+.lb-x{position:absolute;top:14px;right:16px;width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.18);color:#fff;border:0;font-size:24px;cursor:pointer;z-index:2}
+.lb-hint{position:absolute;bottom:18px;left:0;right:0;text-align:center;color:rgba(255,255,255,.5);font-size:11px}
 .tip-ic{flex:none;font-size:26px;width:42px;text-align:center}
 .tip-name{font:600 17px 'Cormorant Garamond';color:var(--h)}
 .tip-tag{font-size:11px;opacity:.62;margin-top:1px;line-height:1.3}
@@ -236,6 +242,9 @@ footer.bottom{position:relative;z-index:5;flex:none;background:var(--paper);bord
       <button class="btn" id="pol-ok">Понятно</button>
     </div>
   </div>
+
+  <!-- lightbox (zoom viewer) -->
+  <div class="lb" id="lb"><button class="lb-x" id="lb-x">×</button><img class="lb-img" id="lb-img" alt=""></div>
 
   <!-- text edit modal (mobile-safe) -->
   <div class="em" id="em">
@@ -547,7 +556,7 @@ function openSection(key){
     csec('Типажи внешности','система Кибби',body=>{
       TIPAZH.forEach(t=>{
         const c=document.createElement('div');c.className='tip';
-        c.innerHTML=`<div class="tip-top"><div class="tip-svg">${t.img?`<img class="tip-photo" src="img/${t.img}.jpg" alt="">`:silhouetteSVG(t.body)}</div><div><div class="tip-name">${t.name}</div><div class="tip-tag">${t.tag}</div></div><div class="tip-arrow">▾</div></div>
+        c.innerHTML=`<div class="tip-top"><div class="tip-svg">${t.img?`<img class="tip-photo" src="img/${t.img}.jpg" alt="" onclick="event.stopPropagation();openLB(this.src)">`:silhouetteSVG(t.body)}</div><div><div class="tip-name">${t.name}</div><div class="tip-tag">${t.tag}</div></div><div class="tip-arrow">▾</div></div>
           <div class="tip-det">
             <div class="tip-row"><div class="tip-face">${faceSVG(t.face)}</div><div class="tip-fn"><b>Черты лица:</b> ${t.faceNote.join(' · ')}</div></div>
             <p><b>Пропорции:</b> ${t.props}</p>
@@ -580,7 +589,7 @@ function openSection(key){
     csec('Типы фигуры','силуэт · что носить · сочетать',body=>{
       FIGURY.forEach(t=>{
         const c=document.createElement('div');c.className='tip';
-        c.innerHTML=`<div class="tip-top"><div class="tip-svg">${t.img?`<img class="tip-photo" src="img/${t.img}.jpg" alt="">`:silhouetteSVG(t.body)}</div><div><div class="tip-name">${t.name}</div><div class="tip-tag">${t.desc}</div></div><div class="tip-arrow">▾</div></div>
+        c.innerHTML=`<div class="tip-top"><div class="tip-svg">${t.img?`<img class="tip-photo" src="img/${t.img}.jpg" alt="" onclick="event.stopPropagation();openLB(this.src)">`:silhouetteSVG(t.body)}</div><div><div class="tip-name">${t.name}</div><div class="tip-tag">${t.desc}</div></div><div class="tip-arrow">▾</div></div>
           <div class="tip-det">
             <p class="good"><b>Носить:</b> ${t.good.join(', ')}.</p>
             <p class="bad"><b>Избегать:</b> ${t.bad.join(', ')}.</p>
@@ -820,6 +829,22 @@ function exportPNG(){
   const a=document.createElement('a');a.href=url;a.download='wardboard.png';a.click();
 }
 function roundRect(g,x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath();}
+
+/* lightbox: tap photo -> fullscreen + double-tap zoom + drag */
+let lbScale=1,lbX=0,lbY=0,lbDx=0,lbDy=0,lbPtr=null;
+const lb=document.getElementById('lb'),lbImg=document.getElementById('lb-img');
+function openLB(src){lbImg.src=src;lbScale=1;lbX=0;lbY=0;lbImg.style.transform='none';lb.classList.add('on');document.body.style.overflow='hidden';}
+function closeLB(){lb.classList.remove('on');document.body.style.overflow='';}
+document.getElementById('lb-x').addEventListener('click',closeLB);
+lb.addEventListener('click',e=>{if(e.target===lb)closeLB();});
+lbImg.addEventListener('dblclick',()=>{lbScale=lbScale>1?1:2.4;applyLB();});
+let lbLastTap=0;
+lbImg.addEventListener('pointerdown',e=>{if(lbScale<=1)return;lbPtr=e.pointerId;lbDx=e.clientX-lbX;lbDy=e.clientY-lbY;lbImg.setPointerCapture(e.pointerId);});
+lbImg.addEventListener('pointermove',e=>{if(lbPtr!==e.pointerId)return;lbX=e.clientX-lbDx;lbY=e.clientY-lbDy;applyLB();});
+lbImg.addEventListener('pointerup',e=>{lbPtr=null;});
+function applyLB(){lbImg.style.transform=`translate(${lbX}px,${lbY}px) scale(${lbScale})`;}
+/* close on Escape */
+window.addEventListener('keydown',e=>{if(e.key==='Escape')closeLB();});
 
 /* theme */
 const th=document.getElementById('th');const root=document.documentElement;
