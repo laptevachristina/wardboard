@@ -108,6 +108,15 @@ footer.bottom{position:relative;z-index:5;flex:none;background:var(--paper);bord
 .tip-top{display:flex;align-items:center;gap:11px;cursor:pointer}
 .tip-svg{flex:none;display:flex;align-items:center}
 .tip-photo{width:50px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+.tip-det .prin{background:var(--rose);border-radius:9px;padding:8px 10px;font-size:12px;line-height:1.45}
+[data-theme="dark"] .tip-det .prin{background:var(--rose2)}
+.exgal-h{font:600 11px 'Inter';color:var(--h);text-transform:uppercase;letter-spacing:.08em;margin:12px 0 8px}
+.exgal{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.ex{margin:0;background:var(--bg);border:1px solid var(--line);border-radius:11px;overflow:hidden;cursor:pointer}
+.ex img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block;background:var(--win)}
+.ex figcaption{padding:7px 8px;font-size:11px;line-height:1.3}
+.ex figcaption b{display:block;color:var(--h);font-weight:600;font-family:'Cormorant Garamond';font-size:13px}
+.ex figcaption span{opacity:.7;font-size:10.5px}
 /* lightbox */
 .lb{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;background:rgba(18,18,18,.93)}
 .lb.on{display:flex}
@@ -370,10 +379,21 @@ const FIGURY=[
   pair:'объёмный верх + прямые тёмные брюки; акцентное колье'},
  {name:'Перевёрнутый треугольник',img:'fig-inverted',body:{sh:23,wa:14,hi:16,leg:50,curve:false},
   desc:'Плечи шире бёдер, ноги стройные.',
-  good:['объём и детали на низ','тёмный верх, V-вырезы','расклёшённый низ, клёш','брюки палаццо, юбка-солнце'],
-  bad:['подплечники, объём плечей','вырез-лодочку, рукав-фонарик','узкий низ'],
-  ex:'V-вырез + брюки палаццо, юбка-солнце',
-  pair:'тёмный верх + светлая расклёшённая юбка'},
+  good:['расклёшённый низ: палаццо, А-юбка, солнце','тёмный верх + светлый или принтованный низ','V-вырезы, вертикали, асимметрия','объём и детали ниже талии','прямые и свободные брюки'],
+  bad:['подплечники, эполеты, нагрудный объём','вырез-лодочку, рукав-фонарик, крылья','узкие скинни и обтягивающий верх','принты и акценты на плечах'],
+  ex:'V-вырез + брюки палаццо, юбка-солнце, платье с запахом',
+  pair:'тёмный верх + светлая расклёшённая юбка; жакет без подплечников + прямые брюки',
+  principle:'Главное — баланс: расширить низ и успокоить верх. Низ всегда объёмнее или детальнее верха.',
+  examples:[
+   {img:'inv1',cap:'Платье миди с V-вырезом',why:'V-вырез визуально сужает плечи'},
+   {img:'inv2',cap:'Прямые длинные брюки',why:'прямой крой добавляет объём низу'},
+   {img:'inv3',cap:'Жакет + брюки',why:'строгий комплект без подплечников'},
+   {img:'inv4',cap:'Пальто + брюки',why:'прямые линии уравновешивают плечи'},
+   {img:'inv5',cap:'Блуза + прямые брюки',why:'круглый вырез, прямой низ'},
+   {img:'inv6',cap:'Чёрно-белый комплект',why:'контраст уводит взгляд от плеч'},
+   {img:'inv7',cap:'Платье + брюки (слои)',why:'многослойность добавляет объём низу'},
+   {img:'inv8',cap:'Пальто + платье миди',why:'расклёшённый низ балансирует верх'}
+  ]},
  {name:'Прямоугольник',img:'fig-rectangle',body:{sh:17,wa:15,hi:17,leg:52,curve:false},
   desc:'Плечи и бёдра равны, талия слабо выражена.',
   good:['создавать талию: пояс, запах','слои и детали','брюки клёш, юбка с баской','платье с контрастным поясом'],
@@ -595,6 +615,8 @@ function openSection(key){
             <p class="bad"><b>Избегать:</b> ${t.bad.join(', ')}.</p>
             <p><b>Пример:</b> ${t.ex}.</p>
             <p><b>Сочетать:</b> ${t.pair}.</p>
+            ${t.principle?`<p class="prin"><b>Принцип:</b> ${t.principle}.</p>`:''}
+            ${t.examples?`<div class="exgal-h">Примеры «что надеть» — тап для увеличения</div><div class="exgal">${t.examples.map(e=>`<figure class="ex" onclick="openLB('img/${e.img}.jpg')"><img src="img/${e.img}.jpg" alt="${e.cap}" loading="lazy"><figcaption><b>${e.cap}</b><span>${e.why}</span></figcaption></figure>`).join('')}</div>`:''}
           </div>`;
         c.querySelector('.tip-top').addEventListener('click',()=>{const on=c.querySelector('.tip-det').classList.toggle('on');c.querySelector('.tip-arrow').textContent=on?'▴':'▾';});
         body.appendChild(c);
